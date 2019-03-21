@@ -1,0 +1,25 @@
+version: '2.3'
+services:
+   matchvec:
+    container_name: ${USER}-matchvec
+    build:
+      context: ./docker/torch-flask
+      args:
+        - http_proxy=${http_proxy}
+        - https_proxy=${https_proxy}
+    runtime: nvidia
+    cpus : 2
+    env_file:
+      - docker/env.list
+    environment:
+     - NVIDIA_VISIBLE_DEVICES=1
+     - TORCH_MODEL_ZOO=/model
+     - http_proxy=${http_proxy}
+     - https_proxy=${http_proxy}
+     - no_proxy=${no_proxy}
+    ports:
+     - "7777:5000"
+    volumes:
+     - ./:/app
+     - /home/model:/model
+    command: "python app.py"
