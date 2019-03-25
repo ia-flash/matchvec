@@ -1,9 +1,57 @@
 <html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MatchVec</title>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
+  </head>
    <body>
-      <form action = "http://localhost:5000/predict" method = "POST"
+    <section class="hero is-primary">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">MatchVec</h1>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+      <form action = "http://localhost:7779/predict" method = "POST"
          enctype = "multipart/form-data">
-         <input type = "file" name = "image" />
-         <input type = "submit"/>
+
+         <div class="field file has-name">
+           <label class="file-label">
+             <input class="file-input" type="file" name="image" id="file">
+             <span class="file-cta">
+               <span class="file-icon">
+                 <i class="fas fa-upload"></i>
+               </span>
+               <span class="file-label">
+                 Choose a file…
+               </span>
+             </span>
+             <span class="file-name" id="filename"></span>
+           </label>
+         </div>
+         <div class="field is-grouped">
+           <div class="control" type="submit">
+             <button class="button is-primary">Predict class</button>
+           </div>
+           <div class="control">
+             <button class="button is-link" formaction="http://localhost:7779/object_detection" >Object detection</button>
+           </div>
+         </div>
       </form>
+      </div>
+    </section>
    </body>
+   <script>
+     var file = document.getElementById("file");
+     file.onchange = function(){
+       if(file.files.length > 0)
+       {
+         document.getElementById('filename').innerHTML = file.files[0].name;
+
+       }
+     };
+   </script>
 </html>
