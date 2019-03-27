@@ -214,16 +214,24 @@ def predict():
     with open(filename) as json_data:
         all_categories = json.load(json_data)
 
+    norm_output = output.add(-output.min()).div(output.add(-output.min()).sum()).mul(100)
+
     # Get max probability
-    _, preds = torch.max(output, 1)
-    print(preds)
+    probs, preds = norm_output.topk(5, 1, True, True)
     pred = preds.data.cpu().tolist()
+
     result = ""
     if len(pred) > 0:
-        result = all_categories[str(pred[0])]
+        first = all_categories[str(pred[0][0])]
+        first_prob = probs.data.cpu().tolist()[0][0]
+        second = all_categories[str(pred[0][1])]
+        second_prob = probs.data.cpu().tolist()[0][1]
+        third = all_categories[str(pred[0][2])]
+        third_prob = probs.data.cpu().tolist()[0][2]
 
     cv2.rectangle(img, (x1, y1), (x2,y2), color_val('green'), 2)
-    cv2.putText(img, "{}".format(result),
+    cv2.putText(img, "{}: {:.3f}; {}: {:.3f}; {}: {:.3f}".format(
+        first, first_prob, second, second_prob, third, third_prob),
             (int(x1 + 0.005*width), int(y2-0.03*height)),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
