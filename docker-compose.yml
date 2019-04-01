@@ -18,7 +18,7 @@ services:
      - https_proxy=${http_proxy}
      - no_proxy=${no_proxy}
     ports:
-     - "7777:5000"
+     - ${APP_PORT}:5000
     volumes:
      - ./:/app
      - /home/model:/model
