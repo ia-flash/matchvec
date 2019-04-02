@@ -1,7 +1,8 @@
 from flask import Flask, render_template, Response, render_template_string, send_from_directory, request
 import json
 import os
-import cv2
+import  cv2
+from PIL import Image
 import numpy as np
 import mmcv
 from mmcv.runner import load_checkpoint
@@ -25,6 +26,7 @@ import torch.backends.cudnn as cudnn
 app = Flask(__name__)
 
 device = 0
+torch.cuda.set_device(device)
 
 # DETECTION
 modele = dict(conf="retinanet_x101_64x4d_fpn_1x",
@@ -40,75 +42,46 @@ _ = load_checkpoint(detection_model, '/model/%s.pth'%modele['checkpoint'])
 COLORS = np.random.uniform(0, 255, size=(100, 3))
 CLASS_NAMES = get_classes('coco')
 
-class Args():
-   def __init__( self):
-      self.arch = 'resnet18'
-      self.batch_size = 256
-      self.dist_url = 'tcp://127.0.0.1:1235'
-      self.dist_backend = 'nccl'
-      self.num_classes = 99
-      self.world_size = 1
-      self.rank = 0
-      self.gpu = 0
-      self.resume = '/model/resnet18-100/model_best.pth.tar'
-      self.data = '/model/resnet18-100'
-      self.pretrained = False
-      self.workers = 4
-      self.multiprocessing_distributed = False
+# Get label
+filename = os.path.join('/model/resnet18-100', 'idx_to_class.json')
+with open(filename) as json_data:
+    all_categories = json.load(json_data)
 
-def load_model():
-    args = Args()
+checkpoint = torch.load('/model/resnet18-100/model_best.pth.tar')
+state_dict =checkpoint['state_dict']
 
-    # Count gpus
-    ngpus_per_node = torch.cuda.device_count()
+from collections import OrderedDict
+new_state_dict = OrderedDict()
+for k, v in state_dict.items():
+    name = k[7:] # remove 'module.' of dataparallel
+    new_state_dict[name]=v
 
-    # create model
-    if args.pretrained:
-        print("=> using pre-trained model '{}'".format(args.arch))
-        model = models.__dict__[args.arch](pretrained=True)
-    else:
-        print("=> creating model '{}'".format(args.arch))
-        model = models.__dict__[args.arch]()
+classification_model = models.__dict__['resnet18'](pretrained=True)
+classification_model.fc = nn.Linear(512, 99)
 
-    # finetune model
-    model.fc = nn.Linear(512, args.num_classes)
+classification_model.load_state_dict(new_state_dict)
 
-    args.rank = args.rank * ngpus_per_node + args.gpu
-    # This blocks until all processes have joined.
-    dist.init_process_group(
-            backend=args.dist_backend,
-            init_method=args.dist_url,
-            world_size=args.world_size,
-            rank=args.rank)
+torch.cuda.set_device(device)
 
-    # set gpu
-    torch.cuda.set_device(args.gpu)
-    model.cuda(args.gpu)
-    # When using a single GPU per process and per
-    # DistributedDataParallel, we need to divide the batch size
-    # ourselves based on the total number of GPUs we have
-    args.batch_size = int(args.batch_size / ngpus_per_node)
-    args.workers = int(args.workers / ngpus_per_node)
-    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
-
-    # optionally resume from a checkpoint
-    if args.resume:
-        if os.path.isfile(args.resume):
-            print("=> loading checkpoint '{}'".format(args.resume))
-            checkpoint = torch.load(args.resume)
-            model.load_state_dict(checkpoint['state_dict'])
-            print("=> loaded checkpoint '{}' (epoch {})"
-                  .format(args.resume, checkpoint['epoch']))
-        else:
-            print("=> no checkpoint found at '{}'".format(args.resume))
-
-    # cudnn auto-tuner to find the best algorithm to use for your hardware.
-    cudnn.benchmark = True
-
-    return model
+classification_model.cuda(device)
+classification_model.eval()
 
 
-classification_model = load_model()
+class Crop(object):
+    """Rescale the image in a sample to a given size.
+
+    Args:
+        output_size (tuple or int): Desired output size. If tuple, output is
+            matched to output_size. If int, smaller of image edges is matched
+            to output_size keeping aspect ratio the same.
+    """
+    def __call__(self, params):
+        sample, coords = params
+        sample = sample.crop(coords)#[coords[1]: coords[3],
+                      #coords[0]: coords[2]]
+        return sample
+
+crop = Crop()
 
 @app.route('/')
 def status():
@@ -131,11 +104,11 @@ def object_detection():
     nparr = np.fromstring(image.read(), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     height, width = img.shape[:-1]
-
+    print(height, width)
     # detect boxes
     result = inference_detector(detection_model, img, cfg, device='cuda:%s'%device)
-
     for i, class_box in enumerate(result):
+        print('The %s th box'%i)
         class_box = class_box[class_box[:,4] > 0.4] # Filter by score
         for box in class_box:
             x1, y1 = (int(box[0]), int(box[1]))
@@ -196,28 +169,47 @@ def predict():
     box = select_box
     x1, y1 = (int(box[0]), int(box[1]))
     x2, y2 = (int(box[2]), int(box[3]))
-
     # Crop and resize
-    im = cv2.resize(img[y1:y2, x1:x2],(224, 224))
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+
+    preprocess = transforms.Compose([
+        crop,
+        transforms.Resize([224,224]),
+        transforms.ToTensor(),
+        normalize,
+    ])
+
+    args = (Image.fromarray(img), (x1,y1,x2,y2))
+    sample = preprocess(args)
+    
+    #im = cv2.resize(img[y1:y2, x1:x2],(224, 224))
 
     # To tensor, normalize and reshape to match input
-    im = to_tensor(im)
-    im = normalize(tensor=im, mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]).reshape(1,3,224,224)
-    im = im.cuda(0, non_blocking=True)
+    #im = to_tensor(im)
+    #sample = normalize(tensor=im, mean=[0.485, 0.456, 0.406],
+    #        std=[0.229, 0.224, 0.225])
+
+    #print(sample.size())
+
+    sample = sample.unsqueeze(0)
+
+    sample = sample.cuda(device)
+    #print(im.data)
 
     # Inference classification model
-    output = classification_model(im)
+    output = classification_model(sample)
 
-    # Get label
-    filename = os.path.join('/model/resnet18-100', 'idx_to_class.json')
-    with open(filename) as json_data:
-        all_categories = json.load(json_data)
 
-    norm_output = output.add(-output.min()).div(output.add(-output.min()).sum()).mul(100)
+    print(output.size())
+
+    softmax = nn.Softmax()
+    norm_output = softmax(output)
+    print(norm_output.data)
 
     # Get max probability
     probs, preds = norm_output.topk(5, 1, True, True)
+    print(probs.data)
     pred = preds.data.cpu().tolist()
 
     result = ""
