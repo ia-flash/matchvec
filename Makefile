@@ -14,6 +14,9 @@ export APP_PORT
 PYTHONUNBUFFERED=1
 export PYTHONUNBUFFERED
 
+build:
+	$(COMPOSE) build
+
 dev:
 	$(COMPOSE) up
 
@@ -25,3 +28,6 @@ stop:
 
 down:
 	$(COMPOSE) down --remove-orphans
+
+logs:
+	$(COMPOSE) logs -f --tail 50
