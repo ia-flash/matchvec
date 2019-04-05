@@ -14,14 +14,14 @@ from mmdet.models import build_detector
 from mmdet.apis import inference_detector
 from mmdet.core import get_classes
 from mmcv.visualization.color import color_val
-import torch.multiprocessing as mp
 
 import torchvision.models as models
-import torch.distributed as dist
-from torchvision.transforms.functional import to_tensor, normalize, resize
 import torchvision.transforms as transforms
 import torch.backends.cudnn as cudnn
 
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 
@@ -50,6 +50,7 @@ with open(filename) as json_data:
 checkpoint = torch.load('/model/resnet18-100/model_best.pth.tar')
 state_dict =checkpoint['state_dict']
 
+# load multi distributed model
 from collections import OrderedDict
 new_state_dict = OrderedDict()
 for k, v in state_dict.items():
@@ -166,72 +167,101 @@ def predict():
                 2)
 
     # Selected box
-    box = select_box
-    x1, y1 = (int(box[0]), int(box[1]))
-    x2, y2 = (int(box[2]), int(box[3]))
-    # Crop and resize
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+    if select_box is not None:
+        box = select_box
+        x1, y1 = (int(box[0]), int(box[1]))
+        x2, y2 = (int(box[2]), int(box[3]))
+        # Crop and resize
+        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                         std=[0.229, 0.224, 0.225])
 
-    preprocess = transforms.Compose([
-        crop,
-        transforms.Resize([224,224]),
-        transforms.ToTensor(),
-        normalize,
-    ])
+        preprocess = transforms.Compose([
+            crop,
+            transforms.Resize([224,224]),
+            transforms.ToTensor(),
+            normalize,
+        ])
 
-    args = (Image.fromarray(img), (x1,y1,x2,y2))
-    sample = preprocess(args)
-    
-    #im = cv2.resize(img[y1:y2, x1:x2],(224, 224))
+        args = (Image.fromarray(img), (x1,y1,x2,y2))
+        sample = preprocess(args)
+        
+        #im = cv2.resize(img[y1:y2, x1:x2],(224, 224))
 
-    # To tensor, normalize and reshape to match input
-    #im = to_tensor(im)
-    #sample = normalize(tensor=im, mean=[0.485, 0.456, 0.406],
-    #        std=[0.229, 0.224, 0.225])
+        # To tensor, normalize and reshape to match input
+        #im = to_tensor(im)
+        #sample = normalize(tensor=im, mean=[0.485, 0.456, 0.406],
+        #        std=[0.229, 0.224, 0.225])
 
-    #print(sample.size())
+        #print(sample.size())
 
-    sample = sample.unsqueeze(0)
+        sample = sample.unsqueeze(0)
 
-    sample = sample.cuda(device)
-    #print(im.data)
+        sample = sample.cuda(device)
+        #print(im.data)
 
-    # Inference classification model
-    output = classification_model(sample)
+        # Inference classification model
+        output = classification_model(sample)
 
 
-    print(output.size())
+        print(output.size())
 
-    softmax = nn.Softmax()
-    norm_output = softmax(output)
-    print(norm_output.data)
+        softmax = nn.Softmax()
+        norm_output = softmax(output)
+        print(norm_output.data)
 
-    # Get max probability
-    probs, preds = norm_output.topk(5, 1, True, True)
-    print(probs.data)
-    pred = preds.data.cpu().tolist()
+        # Get max probability
+        probs, preds = norm_output.topk(5, 1, True, True)
+        pred = preds.data.cpu().tolist()[0]
+        prob = probs.data.cpu().tolist()[0]
 
-    result = ""
-    if len(pred) > 0:
-        first = all_categories[str(pred[0][0])]
-        first_prob = probs.data.cpu().tolist()[0][0]
-        second = all_categories[str(pred[0][1])]
-        second_prob = probs.data.cpu().tolist()[0][1]
-        third = all_categories[str(pred[0][2])]
-        third_prob = probs.data.cpu().tolist()[0][2]
+        result = ""
+        #if len(pred) > 0:
+        #    first = all_categories[str(pred[0][0])]
+        #    first_prob = probs.data.cpu().tolist()[0][0]
+        #    second = all_categories[str(pred[0][1])]
+        #    second_prob = probs.data.cpu().tolist()[0][1]
+        #    third = all_categories[str(pred[0][2])]
+        #    third_prob = probs.data.cpu().tolist()[0][2]
 
-    cv2.rectangle(img, (x1, y1), (x2,y2), color_val('green'), 2)
-    cv2.putText(img, "{}: {:.3f}; {}: {:.3f}; {}: {:.3f}".format(
-        first, first_prob, second, second_prob, third, third_prob),
-            (int(x1 + 0.005*width), int(y2-0.03*height)),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            color_val('green'),
-            2)
-    _, img_encoded = cv2.imencode('.jpg', img)
+        cv2.rectangle(img, (x1, y1), (x2,y2), color_val('green'), 2)
+        #cv2.putText(img, "{}: {:.3f}; {}: {:.3f}; {}: {:.3f}".format(
+        #    first, first_prob, second, second_prob, third, third_prob),
+        #        (int(x1 + 0.005*width), int(y2-0.03*height)),
+        #        cv2.FONT_HERSHEY_SIMPLEX,
+        #        1,
+        #        color_val('green'),
+        #        2)
+        #_, img_encoded = cv2.imencode('.jpg', img)
 
-    return Response(img_encoded.tobytes(), mimetype='image/jpeg')
+        #Creates two subplots and unpacks the output array immediately
+        #fig, (ax1, ax2) = plt.subplots(2, figsize=(6,4))
+        fig = plt.figure()
+        ax1 = plt.subplot2grid((3, 3), (0, 0), colspan=3, rowspan=2)
+        ax1.imshow(img)
+        ax1.axis('off')
+        ax2 = plt.subplot2grid((3, 3), (2, 1))
+        ax2.barh(range(len(pred[:5])), prob[:5], color='blue')
+        ax2.set_yticks(range(len(pred[:5])))
+        ax2.set_yticklabels([all_categories[str(x)] for x in pred[:5]])
+        ax2.invert_yaxis()  # labels read top-to-bottom
+        fig.tight_layout(pad=0)
+        fig.canvas.draw()
+
+        # Now we can save it to a numpy array.
+        data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+        data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+
+        _, img_encoded = cv2.imencode('.jpg', data)
+
+        print(probs.data.cpu().tolist()[0])
+        print(data.shape)
+
+        #return Response(data.tobytes(), mimetype='image/jpeg')
+        return Response(img_encoded.tobytes(), mimetype='image/jpeg')
+    else:
+        _, img_encoded = cv2.imencode('.jpg', img)
+        return Response(img_encoded.tobytes(), mimetype='image/jpeg')
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
