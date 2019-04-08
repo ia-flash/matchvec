@@ -1,4 +1,5 @@
 from flask import Flask, render_template, Response, render_template_string, send_from_directory, request
+from flask_cors import CORS, cross_origin
 import json
 import os
 import  cv2
@@ -24,6 +25,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
 app = Flask(__name__)
+cors = CORS(app)
 
 device = 0
 torch.cuda.set_device(device)
