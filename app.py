@@ -27,19 +27,12 @@ import matplotlib.pyplot as plt
 app = Flask(__name__)
 cors = CORS(app)
 
-device = 0
-torch.cuda.set_device(device)
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-# DETECTION
-modele = dict(conf="retinanet_x101_64x4d_fpn_1x",
-          checkpoint="retinanet_x101_64x4d_fpn_1x_20181218-2f6f778b")
-
-cfg = mmcv.Config.fromfile('/usr/src/app/configs/%s.py'%modele['conf'])
-cfg.model.pretrained = None
-
-detection_model = build_detector(cfg.model, test_cfg=cfg.test_cfg)
-#model.to(device)# = MMDataParallel(model, device_ids=range(num_gpu))
-_ = load_checkpoint(detection_model, '/model/%s.pth'%modele['checkpoint'])
+# DETECTION OPENCV
+cvNet = cv2.dnn.readNetFromTensorflow(
+        '/model/faster_rcnn_resnet50_coco_2018_01_28/frozen_inference_graph.pb',
+        '/model/faster_rcnn_resnet50_coco_2018_01_28.pbtxt')
 
 COLORS = np.random.uniform(0, 255, size=(100, 3))
 CLASS_NAMES = get_classes('coco')
@@ -49,7 +42,7 @@ filename = os.path.join('/model/resnet18-100', 'idx_to_class.json')
 with open(filename) as json_data:
     all_categories = json.load(json_data)
 
-checkpoint = torch.load('/model/resnet18-100/model_best.pth.tar')
+checkpoint = torch.load('/model/resnet18-100/model_best.pth.tar', map_location='cpu')
 state_dict =checkpoint['state_dict']
 
 # load multi distributed model
@@ -64,9 +57,6 @@ classification_model.fc = nn.Linear(512, 99)
 
 classification_model.load_state_dict(new_state_dict)
 
-torch.cuda.set_device(device)
-
-classification_model.cuda(device)
 classification_model.eval()
 
 
@@ -87,16 +77,17 @@ class Crop(object):
 crop = Crop()
 
 def filter_prediction(result, width, height):
-    # Detect box of intereset
-    result = result[2] # Get class car
-    result = result[result[:,4] > 0.4] # Filter by score
+    print("verf",result.shape)
+    result = result[result[:,2] > 0.4] # Filter by score
+    print("after", result.shape)
 
-    # Plot all boxes and select the closes to the center
     dist_box = 99999
     select_box = None
     for box in result:
-        x1, y1 = (int(box[0]), int(box[1]))
-        x2, y2 = (int(box[2]), int(box[3]))
+        x1 = box[3] * width
+        y1 = box[4] * height
+        x2 = box[5] * width
+        y2 = box[6] * height
 
         mean_x = (x1+x2)/2
         mean_y = (y1+y2)/2
@@ -109,9 +100,17 @@ def filter_prediction(result, width, height):
                 dist_box = dist
     return select_box
 
+@app.route('/<path:path>')
+def build(path):
+    return send_from_directory('dist', path)
+
 @app.route('/')
 def status():
-    return json.dumps({'status': 'ok'})
+    return send_from_directory('dist', "index.html")
+
+@app.route('/preview')
+def preview():
+    return send_from_directory('dist', "index.html")
 
 @app.route('/idx_to_class')
 def get_class():
@@ -132,17 +131,26 @@ def api_object_detection():
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         height, width = img.shape[:-1]
 
-        # detect boxes
-        result = inference_detector(detection_model, img, cfg, device='cuda:%s'%device)
+        cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=True, crop=False))
+        cvOut = cvNet.forward()
+        result = cvOut[0,0,:,:]
+        print("shape", result.shape)
+        result = result[result[:,2] > 0.4] # Filter by score
+        print("after", result.shape)
 
-        # Parse resulsts
         res = list()
-        for i, class_box in enumerate(result):
-            class_box = class_box[class_box[:,4] > 0.4] # Filter by score
-            for box in class_box:
-                x1, y1 = (int(box[0]), int(box[1]))
-                x2, y2 = (int(box[2]), int(box[3]))
-                res.append({'bbox': [x1, y1, x2-x1, y2-y1], 'class': CLASS_NAMES[i], 'prob': float(box[4])})
+        for i, detection in enumerate(cvOut[0,0,:,:]):
+            score = float(detection[2])
+            if score > 0.4:
+                x1 = detection[3] * width
+                y1 = detection[4] * height
+                x2 = detection[5] * width
+                y2 = detection[6] * height
+                res.append({
+                    'bbox': [x1, y1, x2-x1, y2-y1],
+                    'class': "score: {:.2f} class {}".format(detection[2], 
+                        CLASS_NAMES[int(detection[1])]),
+                    'prob': float(detection[2])})
 
         return json.dumps(res)
     else:
@@ -160,7 +168,7 @@ def object_detection():
         height, width = img.shape[:-1]
 
         # detect boxes
-        result = inference_detector(detection_model, img, cfg, device='cuda:%s'%device)
+        result = inference_detector(detection_model, img, cfg, device=device)
 
         # Parse results
         for i, class_box in enumerate(result):
@@ -189,17 +197,20 @@ def api_predict():
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
     height, width = img.shape[:-1]
-
-    # Detect all boxes with retina100
-    result = inference_detector(detection_model, img, cfg, device='cuda:%s'%device)
+    cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=True, 
+        crop=False))
+    cvOut = cvNet.forward()
+    result = cvOut[0,0,:,:]
 
     select_box = filter_prediction(result, width, height)
 
     # Selected box
     if select_box is not None:
         box = select_box
-        x1, y1 = (int(box[0]), int(box[1]))
-        x2, y2 = (int(box[2]), int(box[3]))
+        x1 = box[3] * width
+        y1 = box[4] * height
+        x2 = box[5] * width
+        y2 = box[6] * height
         # Crop and resize
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                          std=[0.229, 0.224, 0.225])
@@ -215,8 +226,6 @@ def api_predict():
         sample = preprocess(args)
 
         sample = sample.unsqueeze(0)
-
-        sample = sample.cuda(device)
 
         # Inference classification model
         output = classification_model(sample)
@@ -245,7 +254,7 @@ def predict():
     height, width = img.shape[:-1]
 
     # Detect all boxes with retina100
-    result = inference_detector(detection_model, img, cfg, device='cuda:%s'%device)
+    result = inference_detector(detection_model, img, cfg, device=device)
 
 
     select_box = filter_prediction(result, width, height)

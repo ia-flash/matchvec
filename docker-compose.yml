@@ -4,20 +4,12 @@ services:
     container_name: ${USER}-matchvec
     build:
       context: ./docker/torch-flask
-      args:
-        - http_proxy=${http_proxy}
-        - https_proxy=${https_proxy}
-    runtime: nvidia
     cpus : 2
     ipc: host
     env_file:
       - docker/env.list
     environment:
-     - NVIDIA_VISIBLE_DEVICES=2
      - TORCH_MODEL_ZOO=/model
-     - http_proxy=${http_proxy}
-     - https_proxy=${http_proxy}
-     - no_proxy=${no_proxy}
     ports:
      - ${APP_PORT}:5000
     volumes:
