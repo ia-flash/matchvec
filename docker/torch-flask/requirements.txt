@@ -1,2 +1,5 @@
 Flask==1.0.2
 flask-cors
+numpy==1.16.2
+opencv-python==4.0.0.21
+torchvision
