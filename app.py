@@ -24,7 +24,11 @@ cvNet = cv2.dnn.readNetFromTensorflow(
         #'/model/faster_rcnn_resnet50_coco_2018_01_28.pbtxt')
 
 COLORS = np.random.uniform(0, 255, size=(100, 3))
-#CLASS_NAMES = get_classes('coco')
+# Class names
+filename = os.path.join('/model/ssd_mobilenet_v2_coco_2018_03_29/', 'labels.json')
+print(filename)
+with open(filename) as json_data:
+    CLASS_NAMES = json.load(json_data)
 
 # Get label
 filename = os.path.join('/model/resnet18-100', 'idx_to_class.json')
@@ -133,7 +137,9 @@ def api_object_detection():
                 y2 = detection[6] * height
                 res.append({
                     'bbox': [x1, y1, x2-x1, y2-y1],
-                    'class': "score: {:.2f} class {}".format(detection[2], int(detection[1])),
+                    'class': "{}: {:.2f}".format(
+                        CLASS_NAMES[str(int(detection[1]))], detection[2]
+                        ),
                     'prob': float(detection[2])})
 
         return json.dumps(res)
