@@ -26,6 +26,9 @@ up:
 stop:
 	$(COMPOSE) stop
 
+exec:
+	$(COMPOSE) exec matchvec bash
+
 down:
 	$(COMPOSE) down --remove-orphans
 
