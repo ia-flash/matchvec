@@ -17,16 +17,15 @@ cors = CORS(app)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # DETECTION OPENCV
+DETECTION_MODEL = 'faster_rcnn_resnet101_coco_2018_01_28/'
+#DETECTION_MODEL = 'ssd_mobilenet_v2_coco_2018_03_29/'
 cvNet = cv2.dnn.readNetFromTensorflow(
-        '/model/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pb',
-        '/model/ssd_mobilenet_v2_coco_2018_03_29.pbtxt')
-        #'/model/faster_rcnn_resnet50_coco_2018_01_28/frozen_inference_graph.pb',
-        #'/model/faster_rcnn_resnet50_coco_2018_01_28.pbtxt')
+        os.path.join('/model', DETECTION_MODEL, 'frozen_inference_graph.pb'),
+        os.path.join('/model', DETECTION_MODEL, 'config.pbtxt'))
 
 COLORS = np.random.uniform(0, 255, size=(100, 3))
 # Class names
-filename = os.path.join('/model/ssd_mobilenet_v2_coco_2018_03_29/', 'labels.json')
-print(filename)
+filename = os.path.join('/model', DETECTION_MODEL, 'labels.json')
 with open(filename) as json_data:
     CLASS_NAMES = json.load(json_data)
 
@@ -131,8 +130,8 @@ def api_object_detection():
         for i, detection in enumerate(cvOut[0,0,:,:]):
             score = float(detection[2])
             if score > 0.4:
-                x1 = detection[3] * width
-                y1 = detection[4] * height
+                x1 = max(detection[3] * width, 0)
+                y1 = max(detection[4] * height, 0)
                 x2 = detection[5] * width
                 y2 = detection[6] * height
                 res.append({
