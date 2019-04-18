@@ -102,6 +102,10 @@ def status():
 def preview():
     return send_from_directory('dist', "index.html")
 
+@app.route('/sivnorm')
+def sivnorm():
+    return send_from_directory('dist', "index.html")
+
 @app.route('/idx_to_class')
 def get_class():
 
