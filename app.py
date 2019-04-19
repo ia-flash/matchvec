@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from flask import Flask, render_template, send_from_directory, request
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 import torch
 import torch.nn as nn
 import torchvision.models as models
@@ -17,13 +17,13 @@ cors = CORS(app)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # DETECTION OPENCV
-DETECTION_MODEL = 'faster_rcnn_resnet101_coco_2018_01_28/'
-#DETECTION_MODEL = 'ssd_mobilenet_v2_coco_2018_03_29/'
+#DETECTION_MODEL = 'faster_rcnn_resnet101_coco_2018_01_28/'
+DETECTION_MODEL = 'ssd_mobilenet_v2_coco_2018_03_29/'
+DETECTION_THRESHOLD = 0.4
 cvNet = cv2.dnn.readNetFromTensorflow(
         os.path.join('/model', DETECTION_MODEL, 'frozen_inference_graph.pb'),
         os.path.join('/model', DETECTION_MODEL, 'config.pbtxt'))
 
-COLORS = np.random.uniform(0, 255, size=(100, 3))
 # Class names
 filename = os.path.join('/model', DETECTION_MODEL, 'labels.json')
 with open(filename) as json_data:
@@ -46,10 +46,40 @@ for k, v in state_dict.items():
 
 classification_model = models.__dict__['resnet18'](pretrained=True)
 classification_model.fc = nn.Linear(512, 99)
-
 classification_model.load_state_dict(new_state_dict)
-
 classification_model.eval()
+
+def default_loader(path):
+    from torchvision import get_image_backend
+    if get_image_backend() == 'accimage':
+        return accimage_loader(path)
+    else:
+        return pil_loader(path)
+
+
+class DatasetList(torch.utils.data.Dataset):
+    def __init__(self, samples, transform=None, loader=default_loader, target_transform=None):
+        self.samples = samples
+        if len(samples) == 0:
+            raise(RuntimeError("Found 0 files in dataframe"))
+
+        self.transform = transform
+        self.target_transform = target_transform
+        self.loader = loader
+
+    def __getitem__(self, index):
+        image, coords = self.samples[index] # coords [x1,y1,x2,y2]
+        args = (image, coords)
+
+        if self.transform is not None:
+            sample = self.transform(args)
+        return sample
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __repr__(self):
+        return "Dataset size {}".format(self.__len__())
 
 
 class Crop(object):
@@ -66,29 +96,16 @@ class Crop(object):
                       #coords[0]: coords[2]]
         return sample
 
-crop = Crop()
 
-def filter_prediction(result, width, height):
-    result = result[result[:,2] > 0.4] # Filter by score
-
-    dist_box = 99999
-    select_box = None
+def filter_prediction(img, result, width, height):
+    selected_boxes = list()
     for box in result:
         x1 = box[3] * width
         y1 = box[4] * height
         x2 = box[5] * width
         y2 = box[6] * height
-
-        mean_x = (x1+x2)/2
-        mean_y = (y1+y2)/2
-        surf_box = (x2 - x1)*(y2-y1)
-        dist = (width/2 - mean_x) + (height/2 - mean_y)
-        surf_ratio = surf_box / (width * height)
-        if dist < dist_box:
-            if surf_ratio > 0.2:
-                select_box = box
-                dist_box = dist
-    return select_box
+        selected_boxes.append((Image.fromarray(img), (x1,y1,x2,y2)))
+    return selected_boxes
 
 @app.route('/<path:path>')
 def build(path):
@@ -139,11 +156,15 @@ def api_object_detection():
                 x2 = detection[5] * width
                 y2 = detection[6] * height
                 res.append({
-                    'bbox': [x1, y1, x2-x1, y2-y1],
-                    'class': "{}: {:.2f}".format(
+                    "x1": x1,
+                    "y1": y1,
+                    "x2": x2,
+                    "y2": y2,
+                    "label": "{}: {:.2f}".format(
                         CLASS_NAMES[str(int(detection[1]))], detection[2]
                         ),
-                    'prob': float(detection[2])})
+                    "obj_prob": float(detection[2])
+                    })
 
         return json.dumps(res)
     else:
@@ -151,31 +172,33 @@ def api_object_detection():
 
 @app.route('/api/predict',methods=['POST'])
 def api_predict():
-
     # decode image
     image = request.files["image"]
     nparr = np.fromstring(image.read(), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
+    # Make predictions
     height, width = img.shape[:-1]
     cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=True, 
         crop=False))
     cvOut = cvNet.forward()
     result = cvOut[0,0,:,:]
 
-    select_box = filter_prediction(result, width, height)
+    # Filter
+    result = result[result[:,2] > DETECTION_THRESHOLD] # Filter by score
+    car_index = list(CLASS_NAMES.keys())[list(CLASS_NAMES.values()).index('car')]
+    result = result[result[:,1] == int(car_index)] # Filter class
+
+    selected_boxes = filter_prediction(img, result, width, height)
 
     # Selected box
-    if select_box is not None:
-        box = select_box
-        x1 = box[3] * width
-        y1 = box[4] * height
-        x2 = box[5] * width
-        y2 = box[6] * height
+    if len(selected_boxes) > 0:
+        selected_boxes = filter_prediction(img, result, width, height)
+
         # Crop and resize
+        crop = Crop()
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                          std=[0.229, 0.224, 0.225])
-
         preprocess = transforms.Compose([
             crop,
             transforms.Resize([224,224]),
@@ -183,23 +206,37 @@ def api_predict():
             normalize,
         ])
 
-        args = (Image.fromarray(img), (x1,y1,x2,y2))
-        sample = preprocess(args)
+        val_loader = torch.utils.data.DataLoader(
+                DatasetList(selected_boxes, transform=preprocess),
+                batch_size=256, shuffle=False)
 
-        sample = sample.unsqueeze(0)
+        for inp in val_loader:
+            print(inp.size())
+            output = classification_model(inp)
 
-        # Inference classification model
-        output = classification_model(sample)
+            softmax = nn.Softmax()
+            norm_output = softmax(output)
 
-        softmax = nn.Softmax()
-        norm_output = softmax(output)
+            probs, preds = norm_output.topk(5, 1, True, True)
+            pred = preds.data.cpu().tolist()
+            prob = probs.data.cpu().tolist()
 
-        # Get max probability
-        probs, preds = norm_output.topk(5, 1, True, True)
-        pred = preds.data.cpu().tolist()[0]
-        prob = probs.data.cpu().tolist()[0]
-        return json.dumps({'boxes': [{'bbox': [x1, y1, x2-x1, y2-y1], 'class': all_categories[str(pred[0])], 'prob': float(box[4])}], 'prediction': [{'class': all_categories[str(x)], 'prob': y} for x,y in zip(pred[:5], prob[:5])]})
+            output_json = list()
+            for i in range(len(result)):
+                output_json.append({
+                    "x1": max(int(selected_boxes[i][1][0]), 0),
+                    "y1": max(int(selected_boxes[i][1][1]), 0),
+                    "x2": int(selected_boxes[i][1][2]),
+                    "y2": int(selected_boxes[i][1][3]),
+                    "pred": [all_categories[str(x)] for x in pred[i][:5]],
+                    "prob": [float(x) for x in prob[i]],
+                    "obj": CLASS_NAMES[str(int(result[i][1]))],
+                    "obj_prob": float(result[i][2]),
+                    "label": all_categories[str(pred[i][0])],
+                    })
 
+            print("End", output_json)
+            return json.dumps(output_json)
     else:
         return json.dumps({'status': 'no box'})
 
