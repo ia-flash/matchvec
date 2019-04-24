@@ -11,13 +11,6 @@ from process import predict_class, predict_objects
 app = Flask(__name__)
 cors = CORS(app)
 
-level = logging.DEBUG
-logging.basicConfig(
-        level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
-logger = logging.getLogger(__name__)
-
 @app.route('/<path:path>')
 def build(path):
     return send_from_directory('../dist', path)
@@ -40,7 +33,7 @@ def api_object_detection():
     image = request.files.get('image', None)
     if image:
         # decode istringmage
-        nparr = np.fromstring(image.read(), np.uint8)
+        nparr = np.frombuffer(image.read(), np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         return predict_objects(img)
     else:
@@ -51,7 +44,7 @@ def api_predict():
     # decode image
     image = request.files["image"]
     if image:
-        nparr = np.fromstring(image.read(), np.uint8)
+        nparr = np.frombuffer(image.read(), np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         return predict_class(img)
     else:
