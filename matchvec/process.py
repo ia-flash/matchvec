@@ -3,18 +3,15 @@ import json
 import cv2
 import logging
 import numpy as np
+#import pandas as pd
 from PIL import Image
-from flask import Flask, render_template, send_from_directory, request
-from flask_cors import CORS
+from itertools import combinations
 import torch
 import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as transforms
 import torch.backends.cudnn as cudnn
 from utils import timeit
-
-app = Flask(__name__)
-cors = CORS(app)
 
 level = logging.DEBUG
 logging.basicConfig(
@@ -26,7 +23,7 @@ logger = logging.getLogger(__name__)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # DETECTION OPENCV
-#DETECTION_MODEL = 'faster_rcnn_resnet101_coco_2018_01_28/'
+# DETECTION_MODEL = 'faster_rcnn_resnet101_coco_2018_01_28/'
 DETECTION_MODEL = 'ssd_mobilenet_v2_coco_2018_03_29/'
 DETECTION_THRESHOLD = 0.4
 cvNet = cv2.dnn.readNetFromTensorflow(
@@ -105,6 +102,24 @@ class Crop(object):
                       #coords[0]: coords[2]]
         return sample
 
+
+def IoU(boxA, boxB):
+    # determine the (x, y)-coordinates of the intersection rectangle
+    xA = max(boxA['x1'], boxB['x1'])
+    yA = max(boxA['y1'], boxB['y1'])
+    xB = min(boxA['x2'], boxB['x2'])
+    yB = min(boxA['y2'], boxB['y2'])
+
+    # compute the area of intersection rectangle
+    interArea = max(0, xB - xA + 1) * max(0, yB - yA + 1)
+
+    # compute the intersection over union by taking the intersection
+    # area and dividing it by the sum of prediction + ground-truth
+    # areas - the interesection area
+    iou = interArea / float(boxA['surf_box'] + boxB['surf_box'] - interArea)
+
+    # return the intersection over union value
+    return iou
 
 def filter_prediction(img, result, width, height):
     selected_boxes = list()
@@ -206,55 +221,5 @@ def predict_class(img):
     else:
         return json.dumps({'status': 'no box'})
 
-
-@app.route('/<path:path>')
-def build(path):
-    return send_from_directory('dist', path)
-
-
-@app.route('/')
-def status():
-    return send_from_directory('dist', "index.html")
-
-@app.route('/preview')
-def preview():
-    return send_from_directory('dist', "index.html")
-
-@app.route('/sivnorm')
-def sivnorm():
-    return send_from_directory('dist', "index.html")
-
-@app.route('/idx_to_class')
-def get_class():
-
-    return json.dumps(idx_to_class)
-
-@app.route('/upload')
-def upload_file():
-   return render_template('upload.html')
-
-@app.route('/api/object_detection',methods=['POST'])
-def api_object_detection():
-    # recieve image in files
-    image = request.files.get('image', None)
-    if image:
-        # decode istringmage
-        nparr = np.fromstring(image.read(), np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return predict_objects(img)
-    else:
-        return json.dumps({'status': 'no image'})
-
-@app.route('/api/predict',methods=['POST'])
-def api_predict():
-    # decode image
-    image = request.files["image"]
-    if image:
-        nparr = np.fromstring(image.read(), np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return predict_class(img)
-    else:
-        return json.dumps({'status': 'no image'})
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    pass
