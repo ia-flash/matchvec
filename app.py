@@ -146,25 +146,25 @@ def api_object_detection():
         cvOut = cvNet.forward()
         result = cvOut[0,0,:,:]
         result = result[result[:,2] > 0.4] # Filter by score
+        car_index = list(CLASS_NAMES.keys())[list(CLASS_NAMES.values()).index('car')]
+        result = result[result[:,1] == int(car_index)] # Filter class
 
         res = list()
-        for i, detection in enumerate(cvOut[0,0,:,:]):
-            score = float(detection[2])
-            if score > 0.4:
-                x1 = max(detection[3] * width, 0)
-                y1 = max(detection[4] * height, 0)
-                x2 = detection[5] * width
-                y2 = detection[6] * height
-                res.append({
-                    "x1": x1,
-                    "y1": y1,
-                    "x2": x2,
-                    "y2": y2,
-                    "label": "{}: {:.2f}".format(
-                        CLASS_NAMES[str(int(detection[1]))], detection[2]
-                        ),
-                    "obj_prob": float(detection[2])
-                    })
+        for detection in result:
+            x1 = max(detection[3] * width, 0)
+            y1 = max(detection[4] * height, 0)
+            x2 = detection[5] * width
+            y2 = detection[6] * height
+            res.append({
+                "x1": x1,
+                "y1": y1,
+                "x2": x2,
+                "y2": y2,
+                "label": "{}: {:.2f}".format(
+                    CLASS_NAMES[str(int(detection[1]))], detection[2]
+                    ),
+                "obj_prob": float(detection[2])
+                })
 
         return json.dumps(res)
     else:
@@ -193,8 +193,6 @@ def api_predict():
 
     # Selected box
     if len(selected_boxes) > 0:
-        selected_boxes = filter_prediction(img, result, width, height)
-
         # Crop and resize
         crop = Crop()
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
