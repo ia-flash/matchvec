@@ -1,6 +1,7 @@
 import os
 import json
 import cv2
+import logging
 import numpy as np
 from PIL import Image
 from flask import Flask, render_template, send_from_directory, request
@@ -10,9 +11,17 @@ import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as transforms
 import torch.backends.cudnn as cudnn
+from utils import timeit
 
 app = Flask(__name__)
 cors = CORS(app)
+
+level = logging.DEBUG
+logging.basicConfig(
+        level=level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+logger = logging.getLogger(__name__)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -107,78 +116,39 @@ def filter_prediction(img, result, width, height):
         selected_boxes.append((Image.fromarray(img), (x1,y1,x2,y2)))
     return selected_boxes
 
-@app.route('/<path:path>')
-def build(path):
-    return send_from_directory('dist', path)
+@timeit
+def predict_objects(img):
+    height, width = img.shape[:-1]
 
-@app.route('/')
-def status():
-    return send_from_directory('dist', "index.html")
+    cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=True, crop=False))
+    cvOut = cvNet.forward()
+    result = cvOut[0,0,:,:]
+    result = result[result[:,2] > 0.4] # Filter by score
 
-@app.route('/preview')
-def preview():
-    return send_from_directory('dist', "index.html")
+    res = list()
+    for detection in result:
+        x1 = max(detection[3] * width, 0)
+        y1 = max(detection[4] * height, 0)
+        x2 = detection[5] * width
+        y2 = detection[6] * height
+        res.append({
+            "x1": x1,
+            "y1": y1,
+            "x2": x2,
+            "y2": y2,
+            "label": "{}: {:.2f}".format(
+                CLASS_NAMES[str(int(detection[1]))], detection[2]
+                ),
+            "obj_prob": float(detection[2])
+            })
 
-@app.route('/sivnorm')
-def sivnorm():
-    return send_from_directory('dist', "index.html")
+    return json.dumps(res)
 
-@app.route('/idx_to_class')
-def get_class():
-
-    return json.dumps(idx_to_class)
-
-@app.route('/upload')
-def upload_file():
-   return render_template('upload.html')
-
-@app.route('/api/object_detection',methods=['POST'])
-def api_object_detection():
-    # recieve image in files
-    image = request.files.get('image', None)
-    if image:
-        # decode istringmage
-        nparr = np.fromstring(image.read(), np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        height, width = img.shape[:-1]
-
-        cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=True, crop=False))
-        cvOut = cvNet.forward()
-        result = cvOut[0,0,:,:]
-        result = result[result[:,2] > 0.4] # Filter by score
-
-        res = list()
-        for detection in result:
-            x1 = max(detection[3] * width, 0)
-            y1 = max(detection[4] * height, 0)
-            x2 = detection[5] * width
-            y2 = detection[6] * height
-            res.append({
-                "x1": x1,
-                "y1": y1,
-                "x2": x2,
-                "y2": y2,
-                "label": "{}: {:.2f}".format(
-                    CLASS_NAMES[str(int(detection[1]))], detection[2]
-                    ),
-                "obj_prob": float(detection[2])
-                })
-
-        return json.dumps(res)
-    else:
-        return json.dumps({'status': 'no image'})
-
-@app.route('/api/predict',methods=['POST'])
-def api_predict():
-    # decode image
-    image = request.files["image"]
-    nparr = np.fromstring(image.read(), np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
+@timeit
+def predict_class(img):
     # Make predictions
     height, width = img.shape[:-1]
-    cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=True, 
-        crop=False))
+    cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=True, crop=False))
     cvOut = cvNet.forward()
     result = cvOut[0,0,:,:]
 
@@ -235,6 +205,56 @@ def api_predict():
             return json.dumps(output_json)
     else:
         return json.dumps({'status': 'no box'})
+
+
+@app.route('/<path:path>')
+def build(path):
+    return send_from_directory('dist', path)
+
+
+@app.route('/')
+def status():
+    return send_from_directory('dist', "index.html")
+
+@app.route('/preview')
+def preview():
+    return send_from_directory('dist', "index.html")
+
+@app.route('/sivnorm')
+def sivnorm():
+    return send_from_directory('dist', "index.html")
+
+@app.route('/idx_to_class')
+def get_class():
+
+    return json.dumps(idx_to_class)
+
+@app.route('/upload')
+def upload_file():
+   return render_template('upload.html')
+
+@app.route('/api/object_detection',methods=['POST'])
+def api_object_detection():
+    # recieve image in files
+    image = request.files.get('image', None)
+    if image:
+        # decode istringmage
+        nparr = np.fromstring(image.read(), np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return predict_objects(img)
+    else:
+        return json.dumps({'status': 'no image'})
+
+@app.route('/api/predict',methods=['POST'])
+def api_predict():
+    # decode image
+    image = request.files["image"]
+    if image:
+        nparr = np.fromstring(image.read(), np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return predict_class(img)
+    else:
+        return json.dumps({'status': 'no image'})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
