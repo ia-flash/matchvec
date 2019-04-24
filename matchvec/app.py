@@ -37,7 +37,7 @@ def api_object_detection():
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         return predict_objects(img)
     else:
-        return json.dumps({'status': 'no image'})
+        return json.dumps(list())
 
 @app.route('/api/predict',methods=['POST'])
 def api_predict():
@@ -48,7 +48,7 @@ def api_predict():
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         return predict_class(img)
     else:
-        return json.dumps({'status': 'no image'})
+        return json.dumps(list())
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

@@ -2,8 +2,7 @@ import os
 import json
 import cv2
 import logging
-import numpy as np
-#import pandas as pd
+import pandas as pd
 from PIL import Image
 from itertools import combinations
 import torch
@@ -122,43 +121,35 @@ def IoU(boxA, boxB):
     # return the intersection over union value
     return iou
 
-def filter_prediction(img, result, width, height):
-    selected_boxes = list()
-    for box in result:
-        x1 = box[3] * width
-        y1 = box[4] * height
-        x2 = box[5] * width
-        y2 = box[6] * height
-        selected_boxes.append((Image.fromarray(img), (x1,y1,x2,y2)))
-    return selected_boxes
+def create_df(result, width, height):
+    df = pd.DataFrame(result, columns=['_', 'class_id', 'confidence', 'x1', 'y1', 'x2', 'y2'])
+    df = df.assign(
+            x1 = (df['x1'] * width).astype(int),
+            y1 = (df['y1'] * height).astype(int),
+            x2 = (df['x2'] * width).astype(int),
+            y2 = (df['y2'] * height).astype(int),
+            class_name = df['class_id'].apply(lambda x: CLASS_NAMES[str(int(x))])
+            )
+    return df
+
 
 @timeit
 def predict_objects(img):
     height, width = img.shape[:-1]
+    surf = width * height
 
     cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=True, crop=False))
     cvOut = cvNet.forward()
     result = cvOut[0,0,:,:]
-    result = result[result[:,2] > 0.4] # Filter by score
 
-    res = list()
-    for detection in result:
-        x1 = max(detection[3] * width, 0)
-        y1 = max(detection[4] * height, 0)
-        x2 = detection[5] * width
-        y2 = detection[6] * height
-        res.append({
-            "x1": x1,
-            "y1": y1,
-            "x2": x2,
-            "y2": y2,
-            "label": "{}: {:.2f}".format(
-                CLASS_NAMES[str(int(detection[1]))], detection[2]
-                ),
-            "obj_prob": float(detection[2])
-            })
+    df = create_df(result, width, height)
 
-    return json.dumps(res)
+    # Filter
+    df = df[df['confidence'] > DETECTION_THRESHOLD] #filter by score
+
+    df['label'] = df['class_name'] + ': ' + df['confidence'].astype(str).str.slice(stop=4)
+    cols = ['x1', 'y1', 'x2', 'y2', 'class_name', 'confidence', 'label']
+    return json.dumps(df[cols].to_dict(orient='records'))
 
 @timeit
 def predict_class(img):
@@ -168,12 +159,13 @@ def predict_class(img):
     cvOut = cvNet.forward()
     result = cvOut[0,0,:,:]
 
-    # Filter
-    result = result[result[:,2] > DETECTION_THRESHOLD] # Filter by score
-    car_index = list(CLASS_NAMES.keys())[list(CLASS_NAMES.values()).index('car')]
-    result = result[result[:,1] == int(car_index)] # Filter class
+    df = create_df(result, width, height)
 
-    selected_boxes = filter_prediction(img, result, width, height)
+    # Filter
+    df = df[df['confidence'] > DETECTION_THRESHOLD] # filter by score
+    df = df[df['class_name'] == 'car'] # filter by class
+
+    selected_boxes = list(zip([Image.fromarray(img)]*len(df),df[['x1','y1','x2','y2']].values.tolist()))
 
     # Selected box
     if len(selected_boxes) > 0:
@@ -193,7 +185,6 @@ def predict_class(img):
                 batch_size=256, shuffle=False)
 
         for inp in val_loader:
-            print(inp.size())
             output = classification_model(inp)
 
             softmax = nn.Softmax()
@@ -203,24 +194,20 @@ def predict_class(img):
             pred = preds.data.cpu().tolist()
             prob = probs.data.cpu().tolist()
 
-            output_json = list()
-            for i in range(len(result)):
-                output_json.append({
-                    "x1": max(int(selected_boxes[i][1][0]), 0),
-                    "y1": max(int(selected_boxes[i][1][1]), 0),
-                    "x2": int(selected_boxes[i][1][2]),
-                    "y2": int(selected_boxes[i][1][3]),
-                    "pred": [all_categories[str(x)] for x in pred[i][:5]],
-                    "prob": [float(x) for x in prob[i]],
-                    "obj": CLASS_NAMES[str(int(result[i][1]))],
-                    "obj_prob": float(result[i][2]),
-                    "label": all_categories[str(pred[i][0])],
-                    })
-
-            print("End", output_json)
-            return json.dumps(output_json)
+            df = df.assign(
+                    pred = [[all_categories[str(x)] for x in pred[i]] for i in range(len(pred))],
+                    prob = prob,
+                    )
+            df['label'] = df['pred'].apply(lambda x: x[0]) + ": " + df['prob'].apply(lambda x: x[0]).astype(str).str.slice(stop=4)
+            logger.debug("After all")
+            logger.debug("\n {}".format(df.values))
+            cols = ['x1', 'y1', 'x2', 'y2', 'pred', 'prob', 'class_name', 'confidence', 'label']
+            return json.dumps(df[cols].to_dict(orient='records'))
     else:
-        return json.dumps({'status': 'no box'})
+        return json.dumps(list())
 
 if __name__ == '__main__':
-    pass
+    img = cv2.imread('clio-punto-megane.jpg')
+    #res = predict_objects(img)
+    res = predict_class(img)
+    print(res)
