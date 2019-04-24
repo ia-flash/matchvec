@@ -146,8 +146,6 @@ def api_object_detection():
         cvOut = cvNet.forward()
         result = cvOut[0,0,:,:]
         result = result[result[:,2] > 0.4] # Filter by score
-        car_index = list(CLASS_NAMES.keys())[list(CLASS_NAMES.values()).index('car')]
-        result = result[result[:,1] == int(car_index)] # Filter class
 
         res = list()
         for detection in result:
