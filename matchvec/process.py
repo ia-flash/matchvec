@@ -138,7 +138,7 @@ def predict_objects(img):
     height, width = img.shape[:-1]
     surf = width * height
 
-    cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=True, crop=False))
+    cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=False, crop=False))
     cvOut = cvNet.forward()
     result = cvOut[0,0,:,:]
 
@@ -155,7 +155,7 @@ def predict_objects(img):
 def predict_class(img):
     # Make predictions
     height, width = img.shape[:-1]
-    cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=True, crop=False))
+    cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=False, crop=False))
     cvOut = cvNet.forward()
     result = cvOut[0,0,:,:]
 
