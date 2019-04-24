@@ -1,3 +1,5 @@
 docker/env.list
 __pycache__
 .mypy_cache
+dist
+model
