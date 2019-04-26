@@ -2,6 +2,7 @@ import os
 import json
 import cv2
 import logging
+import requests
 import pandas as pd
 from PIL import Image
 from itertools import combinations, product
@@ -162,6 +163,18 @@ def filter_by_iou(df):
     df = df.drop(id_to_drop)
     return df
 
+def test_app():
+    #url = 'http://matchvec:5000/api/object_detection'
+    url = 'http://matchvec:5000/api/predict'
+    files = {'image': open('clio-peugeot.jpg', 'rb')}
+    res = requests.post(url, files=files)
+    logger.debug(res.text)
+
+def test_app_multiple():
+    url = 'http://matchvec:5000/api/object_detection'
+    files = [('image', open('clio-peugeot.jpg', 'rb')), ('image', open('cliomegane.jpg', 'rb'))]
+    res = requests.post(url, files=files)
+    logger.debug(res.text)
 
 @timeit
 def predict_objects(img):
@@ -239,7 +252,9 @@ def predict_class(img):
         return list()
 
 if __name__ == '__main__':
-    img = cv2.imread('clio-punto-megane.jpg')
+    #img = cv2.imread('clio-peugeot.jpg')
     #res = predict_objects(img)
-    res = predict_class(img)
-    print(res)
+    #res = predict_class(img)
+    #print(res)
+    test_app()
+    #test_app_multiple()
