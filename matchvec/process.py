@@ -124,8 +124,8 @@ def IoU(boxA, boxB):
 def create_df(result, width, height):
     df = pd.DataFrame(result, columns=['_', 'class_id', 'confidence', 'x1', 'y1', 'x2', 'y2'])
     df = df.assign(
-            x1 = (df['x1'] * width).astype(int),
-            y1 = (df['y1'] * height).astype(int),
+            x1 = (df['x1'] * width).astype(int).clip(0),
+            y1 = (df['y1'] * height).astype(int).clip(0),
             x2 = (df['x2'] * width).astype(int),
             y2 = (df['y2'] * height).astype(int),
             class_name = df['class_id'].apply(lambda x: CLASS_NAMES[str(int(x))])
