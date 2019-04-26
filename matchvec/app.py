@@ -29,26 +29,23 @@ def sivnorm():
 
 @app.route('/api/object_detection',methods=['POST'])
 def api_object_detection():
-    # recieve image in files
-    image = request.files.get('image', None)
-    if image:
-        # decode istringmage
-        nparr = np.frombuffer(image.read(), np.uint8)
+    images = request.files.getlist('image')
+    res = list()
+    for i in range(len(images)):
+        nparr = np.frombuffer(images[i].read(), np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return predict_objects(img)
-    else:
-        return json.dumps(list())
+        res.append(predict_objects(img))
+    return json.dumps(res)
 
 @app.route('/api/predict',methods=['POST'])
 def api_predict():
-    # decode image
-    image = request.files["image"]
-    if image:
-        nparr = np.frombuffer(image.read(), np.uint8)
+    images = request.files.getlist('image')
+    res = list()
+    for i in range(len(images)):
+        nparr = np.frombuffer(images[i].read(), np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return predict_class(img)
-    else:
-        return json.dumps(list())
+        res.append(predict_class(img))
+    return json.dumps(res)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
