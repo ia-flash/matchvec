@@ -4,7 +4,7 @@ import cv2
 import logging
 import pandas as pd
 from PIL import Image
-from itertools import combinations
+from itertools import combinations, product
 import torch
 import torch.nn as nn
 import torchvision.models as models
@@ -26,6 +26,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # DETECTION_MODEL = 'faster_rcnn_resnet101_coco_2018_01_28/'
 DETECTION_MODEL = 'ssd_mobilenet_v2_coco_2018_03_29/'
 DETECTION_THRESHOLD = 0.4
+DETECTION_IOU_THRESHOLD = 0.9
 cvNet = cv2.dnn.readNetFromTensorflow(
         os.path.join('/model', DETECTION_MODEL, 'frozen_inference_graph.pb'),
         os.path.join('/model', DETECTION_MODEL, 'config.pbtxt'))
@@ -132,6 +133,35 @@ def create_df(result, width, height):
             )
     return df
 
+def filter_by_size(df):
+    """Filter box too small"""
+    df['mean_x'] = df[['x1', 'x2']].mean(axis=1)
+    df['mean_y'] = df[['y1', 'y2']].mean(axis=1)
+    df['dist'] = ((width/2 - df['mean_x']) **2 + (height/2 - df['mean_y'])**2).pow(1./2)
+    df['surf_box'] = (df['x2'] - df['x1']) * (df['y2'] - df['y1'])
+    df['surf_ratio'] = df['surf_box'] / surf
+    df = df[(df['surf_ratio']>0.05)]
+    return df
+
+def filter_by_iou(df):
+    """Filter box of car and truck when IoU>DETECTION_IOU_THRESHOLD """
+    df['surf_box'] = (df['x2'] - df['x1']) * (df['y2'] - df['y1'])
+    df_class = df[df['class_name'].isin(['car','truck'])].groupby('class_name')
+    prod_class = combinations(df_class, 2)
+    id_to_drop = []
+    for (class_a, df_a), (class_b, df_b) in prod_class:
+        for (id1, vec1), (id2, vec2) in product(df_a.iterrows(), df_b.iterrows()):
+            iou = IoU(vec1, vec2)
+            if iou > DETECTION_IOU_THRESHOLD:
+                #print('drop truck')
+                if class_a == 'truck':
+                    id_to_drop += [id1]
+                elif class_b == 'truck':
+                    id_to_drop += [id2]
+    # drop trucks overlapping car
+    df = df.drop(id_to_drop)
+    return df
+
 
 @timeit
 def predict_objects(img):
@@ -144,12 +174,16 @@ def predict_objects(img):
 
     df = create_df(result, width, height)
 
-    # Filter
-    df = df[df['confidence'] > DETECTION_THRESHOLD] #filter by score
+    # Filter by confidence score
+    df = df[df['confidence'] > DETECTION_THRESHOLD]
+
+    #df = filter_by_size(df)
+
+    df = filter_by_iou(df)
 
     df['label'] = df['class_name'] + ': ' + df['confidence'].astype(str).str.slice(stop=4)
     cols = ['x1', 'y1', 'x2', 'y2', 'class_name', 'confidence', 'label']
-    return json.dumps(df[cols].to_dict(orient='records'))
+    return df[cols].to_dict(orient='records')
 
 @timeit
 def predict_class(img):
@@ -199,12 +233,10 @@ def predict_class(img):
                     prob = prob,
                     )
             df['label'] = df['pred'].apply(lambda x: x[0]) + ": " + df['prob'].apply(lambda x: x[0]).astype(str).str.slice(stop=4)
-            logger.debug("After all")
-            logger.debug("\n {}".format(df.values))
             cols = ['x1', 'y1', 'x2', 'y2', 'pred', 'prob', 'class_name', 'confidence', 'label']
-            return json.dumps(df[cols].to_dict(orient='records'))
+            return df[cols].to_dict(orient='records')
     else:
-        return json.dumps(list())
+        return list()
 
 if __name__ == '__main__':
     img = cv2.imread('clio-punto-megane.jpg')
