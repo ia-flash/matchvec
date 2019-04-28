@@ -3,6 +3,7 @@ import os
 import cv2
 import json
 import pandas as pd
+from utils import timeit
 
 # DETECTION_MODEL = 'faster_rcnn_resnet101_coco_2018_01_28/'
 DETECTION_MODEL = 'ssd_mobilenet_v2_coco_2018_03_29/'
@@ -13,6 +14,7 @@ with open(os.path.join('/model', DETECTION_MODEL, 'labels.json')) as json_data:
     CLASS_NAMES = json.load(json_data)
 
 
+@timeit
 class Detector():
     """SSD Mobilenet object detection"""
 

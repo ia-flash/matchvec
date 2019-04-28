@@ -4,6 +4,7 @@ import cv2
 import json
 import numpy as np
 import pandas as pd
+from utils import timeit
 
 DETECTION_MODEL = 'yolo'
 DETECTION_THRESHOLD = 0.4
@@ -35,7 +36,7 @@ def filter_yolo(chunk):
     return df
 
 
-
+@timeit
 class Detector():
     """Yolo object detection"""
 
