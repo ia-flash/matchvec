@@ -1,18 +1,14 @@
-import os
-import json
 import cv2
 import logging
 import requests
 from PIL import Image
 from itertools import combinations, product
-import torch
-import torch.nn as nn
-import torchvision.models as models
-import torchvision.transforms as transforms
 from utils import timeit
+from classification import Classifier
 from yolo_detection import Detector
 # from ssd_detection import Detector
 detector = Detector()
+classifier = Classifier()
 
 level = logging.DEBUG
 logging.basicConfig(
@@ -22,78 +18,9 @@ logging.basicConfig(
         )
 logger = logging.getLogger(__name__)
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 
 DETECTION_IOU_THRESHOLD = 0.9
 DETECTION_SIZE_THRESHOLD = 0.01
-
-# Get label
-filename = os.path.join('/model/resnet18-100', 'idx_to_class.json')
-with open(filename) as json_data:
-    all_categories = json.load(json_data)
-
-checkpoint = torch.load('/model/resnet18-100/model_best.pth.tar', map_location='cpu')
-state_dict = checkpoint['state_dict']
-
-# load multi distributed model
-from collections import OrderedDict
-new_state_dict = OrderedDict()
-for k, v in state_dict.items():
-    name = k[7:] # remove 'module.' of dataparallel
-    new_state_dict[name]=v
-
-classification_model = models.__dict__['resnet18'](pretrained=True)
-classification_model.fc = nn.Linear(512, 99)
-classification_model.load_state_dict(new_state_dict)
-classification_model.eval()
-
-def default_loader(path):
-    from torchvision import get_image_backend
-    if get_image_backend() == 'accimage':
-        return accimage_loader(path)
-    else:
-        return pil_loader(path)
-
-
-class DatasetList(torch.utils.data.Dataset):
-    def __init__(self, samples, transform=None, loader=default_loader, target_transform=None):
-        self.samples = samples
-        if len(samples) == 0:
-            raise(RuntimeError("Found 0 files in dataframe"))
-
-        self.transform = transform
-        self.target_transform = target_transform
-        self.loader = loader
-
-    def __getitem__(self, index):
-        image, coords = self.samples[index] # coords [x1,y1,x2,y2]
-        args = (image, coords)
-
-        if self.transform is not None:
-            sample = self.transform(args)
-        return sample
-
-    def __len__(self):
-        return len(self.samples)
-
-    def __repr__(self):
-        return "Dataset size {}".format(self.__len__())
-
-
-class Crop(object):
-    """Rescale the image in a sample to a given size.
-
-    Args:
-        output_size (tuple or int): Desired output size. If tuple, output is
-            matched to output_size. If int, smaller of image edges is matched
-            to output_size keeping aspect ratio the same.
-    """
-    def __call__(self, params):
-        sample, coords = params
-        sample = sample.crop(coords)#[coords[1]: coords[3],
-                      #coords[0]: coords[2]]
-        return sample
 
 
 def IoU(boxA, boxB):
@@ -153,16 +80,19 @@ def filter_by_iou(df):
 
 
 def test_app():
-    # url = 'http://matchvec:5000/api/object_detection'
-    url = 'http://matchvec:5000/api/predict'
-    files = {'image': open('clio-peugeot.jpg', 'rb')}
+    url = 'http://matchvec:5000/api/object_detection'
+    # url = 'http://matchvec:5000/api/predict'
+    files = {'image': open('clio-punto-megane.jpg', 'rb')}
     res = requests.post(url, files=files)
     logger.debug(res.text)
 
 
 def test_app_multiple():
     url = 'http://matchvec:5000/api/object_detection'
-    files = [('image', open('clio-peugeot.jpg', 'rb')), ('image', open('cliomegane.jpg', 'rb'))]
+    files = [
+            ('image', open('clio-peugeot.jpg', 'rb')),
+            ('image', open('cliomegane.jpg', 'rb'))
+            ]
     res = requests.post(url, files=files)
     logger.debug(res.text)
 
@@ -172,7 +102,7 @@ def predict_objects(img):
     result = detector.prediction(img)
     df = detector.create_df(result, img)
 
-    df = filter_by_size(df)
+    df = filter_by_size(df, img)
 
     df = filter_by_iou(df)
 
@@ -197,45 +127,22 @@ def predict_class(img):
 
     # Selected box
     if len(selected_boxes) > 0:
-        # Crop and resize
-        crop = Crop()
-        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                         std=[0.229, 0.224, 0.225])
-        preprocess = transforms.Compose([
-            crop,
-            transforms.Resize([224, 224]),
-            transforms.ToTensor(),
-            normalize,
-        ])
-
-        val_loader = torch.utils.data.DataLoader(
-                DatasetList(selected_boxes, transform=preprocess),
-                batch_size=256, shuffle=False)
-
-        for inp in val_loader:
-            output = classification_model(inp)
-
-            softmax = nn.Softmax()
-            norm_output = softmax(output)
-
-            probs, preds = norm_output.topk(5, 1, True, True)
-            pred = preds.data.cpu().tolist()
-            prob = probs.data.cpu().tolist()
-
-            df = df.assign(
-                    pred=[[all_categories[str(x)] for x in pred[i]] for i in range(len(pred))],
-                    prob=prob,
-                    label=lambda x: (
-                        x['pred'].apply(lambda x: x[0]) +
-                        ": " + (
-                            x['prob'].apply(lambda x: x[0])
-                            .astype(str).str.slice(stop=4)
-                            )
+        pred, prob = classifier.prediction(selected_boxes)
+        df = df.assign(
+                pred=pred,
+                prob=prob,
+                label=lambda x: (
+                    x['pred'].apply(lambda x: x[0]) +
+                    ": " + (
+                        x['prob'].apply(lambda x: x[0])
+                        .astype(str).str.slice(stop=4)
                         )
                     )
-            cols = ['x1', 'y1', 'x2', 'y2', 'pred', 'prob', 'class_name',
-                    'confidence', 'label']
-            return df[cols].to_dict(orient='records')
+                )
+        cols = ['x1', 'y1', 'x2', 'y2', 'pred', 'prob', 'class_name',
+                'confidence', 'label']
+        return df[cols].to_dict(orient='records')
+
     else:
         return list()
 
