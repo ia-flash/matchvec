@@ -3,15 +3,16 @@ import json
 import cv2
 import logging
 import requests
-import pandas as pd
 from PIL import Image
 from itertools import combinations, product
 import torch
 import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as transforms
-import torch.backends.cudnn as cudnn
 from utils import timeit
+from yolo_detection import Detector
+# from ssd_detection import Detector
+detector = Detector()
 
 level = logging.DEBUG
 logging.basicConfig(
@@ -23,19 +24,9 @@ logger = logging.getLogger(__name__)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-# DETECTION OPENCV
-# DETECTION_MODEL = 'faster_rcnn_resnet101_coco_2018_01_28/'
-DETECTION_MODEL = 'ssd_mobilenet_v2_coco_2018_03_29/'
-DETECTION_THRESHOLD = 0.4
-DETECTION_IOU_THRESHOLD = 0.9
-cvNet = cv2.dnn.readNetFromTensorflow(
-        os.path.join('/model', DETECTION_MODEL, 'frozen_inference_graph.pb'),
-        os.path.join('/model', DETECTION_MODEL, 'config.pbtxt'))
 
-# Class names
-filename = os.path.join('/model', DETECTION_MODEL, 'labels.json')
-with open(filename) as json_data:
-    CLASS_NAMES = json.load(json_data)
+DETECTION_IOU_THRESHOLD = 0.9
+DETECTION_SIZE_THRESHOLD = 0.01
 
 # Get label
 filename = os.path.join('/model/resnet18-100', 'idx_to_class.json')
@@ -43,7 +34,7 @@ with open(filename) as json_data:
     all_categories = json.load(json_data)
 
 checkpoint = torch.load('/model/resnet18-100/model_best.pth.tar', map_location='cpu')
-state_dict =checkpoint['state_dict']
+state_dict = checkpoint['state_dict']
 
 # load multi distributed model
 from collections import OrderedDict
@@ -123,38 +114,35 @@ def IoU(boxA, boxB):
     # return the intersection over union value
     return iou
 
-def create_df(result, width, height):
-    df = pd.DataFrame(result, columns=['_', 'class_id', 'confidence', 'x1', 'y1', 'x2', 'y2'])
+
+def filter_by_size(df, image):
+    """Filter box too small"""
+    height, width = image.shape[:-1]
+    surf = width * height
     df = df.assign(
-            x1 = (df['x1'] * width).astype(int).clip(0),
-            y1 = (df['y1'] * height).astype(int).clip(0),
-            x2 = (df['x2'] * width).astype(int),
-            y2 = (df['y2'] * height).astype(int),
-            class_name = df['class_id'].apply(lambda x: CLASS_NAMES[str(int(x))])
+            mean_x=lambda x: x[['x1', 'x2']].mean(axis=1),
+            mean_y=lambda x: x[['y1', 'y2']].mean(axis=1),
+            dist=lambda x: (
+                ((width/2 - x['mean_x']) ** 2 +
+                    (height/2 - x['mean_y'])**2).pow(1./2)),
+            surf_box=lambda x: (x['x2'] - x['x1']) * (x['y2'] - x['y1']),
+            surf_ratio=lambda x: x['surf_box'] / surf
             )
+    df = df[(df['surf_ratio'] > DETECTION_SIZE_THRESHOLD)]
     return df
 
-def filter_by_size(df):
-    """Filter box too small"""
-    df['mean_x'] = df[['x1', 'x2']].mean(axis=1)
-    df['mean_y'] = df[['y1', 'y2']].mean(axis=1)
-    df['dist'] = ((width/2 - df['mean_x']) **2 + (height/2 - df['mean_y'])**2).pow(1./2)
-    df['surf_box'] = (df['x2'] - df['x1']) * (df['y2'] - df['y1'])
-    df['surf_ratio'] = df['surf_box'] / surf
-    df = df[(df['surf_ratio']>0.05)]
-    return df
 
 def filter_by_iou(df):
     """Filter box of car and truck when IoU>DETECTION_IOU_THRESHOLD """
     df['surf_box'] = (df['x2'] - df['x1']) * (df['y2'] - df['y1'])
-    df_class = df[df['class_name'].isin(['car','truck'])].groupby('class_name')
+    df_class = df[df['class_name'].isin(['car', 'truck'])].groupby('class_name')
     prod_class = combinations(df_class, 2)
     id_to_drop = []
     for (class_a, df_a), (class_b, df_b) in prod_class:
         for (id1, vec1), (id2, vec2) in product(df_a.iterrows(), df_b.iterrows()):
             iou = IoU(vec1, vec2)
             if iou > DETECTION_IOU_THRESHOLD:
-                #print('drop truck')
+                # print('drop truck')
                 if class_a == 'truck':
                     id_to_drop += [id1]
                 elif class_b == 'truck':
@@ -163,12 +151,14 @@ def filter_by_iou(df):
     df = df.drop(id_to_drop)
     return df
 
+
 def test_app():
-    #url = 'http://matchvec:5000/api/object_detection'
+    # url = 'http://matchvec:5000/api/object_detection'
     url = 'http://matchvec:5000/api/predict'
     files = {'image': open('clio-peugeot.jpg', 'rb')}
     res = requests.post(url, files=files)
     logger.debug(res.text)
+
 
 def test_app_multiple():
     url = 'http://matchvec:5000/api/object_detection'
@@ -176,43 +166,34 @@ def test_app_multiple():
     res = requests.post(url, files=files)
     logger.debug(res.text)
 
+
 @timeit
 def predict_objects(img):
-    height, width = img.shape[:-1]
-    surf = width * height
+    result = detector.prediction(img)
+    df = detector.create_df(result, img)
 
-    cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=False, crop=False))
-    cvOut = cvNet.forward()
-    result = cvOut[0,0,:,:]
-
-    df = create_df(result, width, height)
-
-    # Filter by confidence score
-    df = df[df['confidence'] > DETECTION_THRESHOLD]
-
-    #df = filter_by_size(df)
+    df = filter_by_size(df)
 
     df = filter_by_iou(df)
 
-    df['label'] = df['class_name'] + ': ' + df['confidence'].astype(str).str.slice(stop=4)
     cols = ['x1', 'y1', 'x2', 'y2', 'class_name', 'confidence', 'label']
     return df[cols].to_dict(orient='records')
 
+
 @timeit
 def predict_class(img):
-    # Make predictions
-    height, width = img.shape[:-1]
-    cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300, 300), swapRB=False, crop=False))
-    cvOut = cvNet.forward()
-    result = cvOut[0,0,:,:]
+    result = detector.prediction(img)
+    df = detector.create_df(result, img)
 
-    df = create_df(result, width, height)
+    # Filter by class
+    df = df[df['class_name'] == 'car']
 
-    # Filter
-    df = df[df['confidence'] > DETECTION_THRESHOLD] # filter by score
-    df = df[df['class_name'] == 'car'] # filter by class
-
-    selected_boxes = list(zip([Image.fromarray(img)]*len(df),df[['x1','y1','x2','y2']].values.tolist()))
+    selected_boxes = list(
+            zip(
+                [Image.fromarray(img)]*len(df),
+                df[['x1', 'y1', 'x2', 'y2']].values.tolist()
+                )
+            )
 
     # Selected box
     if len(selected_boxes) > 0:
@@ -222,7 +203,7 @@ def predict_class(img):
                                          std=[0.229, 0.224, 0.225])
         preprocess = transforms.Compose([
             crop,
-            transforms.Resize([224,224]),
+            transforms.Resize([224, 224]),
             transforms.ToTensor(),
             normalize,
         ])
@@ -242,19 +223,29 @@ def predict_class(img):
             prob = probs.data.cpu().tolist()
 
             df = df.assign(
-                    pred = [[all_categories[str(x)] for x in pred[i]] for i in range(len(pred))],
-                    prob = prob,
+                    pred=[[all_categories[str(x)] for x in pred[i]] for i in range(len(pred))],
+                    prob=prob,
+                    label=lambda x: (
+                        x['pred'].apply(lambda x: x[0]) +
+                        ": " + (
+                            x['prob'].apply(lambda x: x[0])
+                            .astype(str).str.slice(stop=4)
+                            )
+                        )
                     )
-            df['label'] = df['pred'].apply(lambda x: x[0]) + ": " + df['prob'].apply(lambda x: x[0]).astype(str).str.slice(stop=4)
-            cols = ['x1', 'y1', 'x2', 'y2', 'pred', 'prob', 'class_name', 'confidence', 'label']
+            cols = ['x1', 'y1', 'x2', 'y2', 'pred', 'prob', 'class_name',
+                    'confidence', 'label']
             return df[cols].to_dict(orient='records')
     else:
         return list()
 
+
 if __name__ == '__main__':
-    #img = cv2.imread('clio-peugeot.jpg')
+    img = cv2.imread('clio-punto-megane.jpg')
+    #img = cv2.imread('image.jpg')
+    print(img.shape)
     #res = predict_objects(img)
-    #res = predict_class(img)
-    #print(res)
-    test_app()
+    res = predict_class(img)
+    print(res)
+    #test_app()
     #test_app_multiple()
