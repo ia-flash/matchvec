@@ -8,6 +8,7 @@ from utils import timeit
 
 DETECTION_MODEL = 'yolo'
 DETECTION_THRESHOLD = 0.4
+NMS_THRESHOLD = 0.4 # Non Maximum Supression threshold
 SWAPRB = True
 SCALE = 0.00392  # 1/255
 
@@ -74,4 +75,10 @@ class Detector():
                         )
                     )
                 )
+        cols = ['x1', 'y1', 'w', 'h']
+        #indices = cv2.dnn.NMSBoxes(boxes, confidences, THRESHOLD, NMS_THRESHOLD)
+        indices = cv2.dnn.NMSBoxes(df[cols].values.tolist(), df['confidence'].tolist(), DETECTION_THRESHOLD, NMS_THRESHOLD)
+        if len(indices) > 0:
+            df = df.iloc[indices.flatten()]
         return df
+
