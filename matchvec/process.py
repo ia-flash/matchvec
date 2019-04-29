@@ -116,7 +116,7 @@ def predict_class(img):
     df = detector.create_df(result, img)
 
     # Filter by class
-    df = df[df['class_name'] == 'car']
+    df = df[(df['class_name'] == 'car') | (df['class_name'] == 'truck')]
 
     selected_boxes = list(
             zip(
