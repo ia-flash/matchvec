@@ -50,7 +50,12 @@ class Detector():
                 x2=lambda x: (x['x2'] * width).astype(int),
                 y2=lambda x: (x['y2'] * height).astype(int),
                 class_name=lambda x: (
-                    x['class_id'].apply(lambda y: CLASS_NAMES[str(int(y))]))
+                    x['class_id'].apply(lambda y: CLASS_NAMES[str(int(y))])),
+                label=lambda x: (
+                    x.class_name + ': ' + (
+                        x['confidence'].astype(str).str.slice(stop=4)
+                        )
+                    )
                 )
         df = df[df['confidence'] > DETECTION_THRESHOLD]
         return df
