@@ -8,8 +8,8 @@ from utils import timeit
 
 DETECTION_MODEL = 'yolo'
 DETECTION_THRESHOLD = 0.4
-NMS_THRESHOLD = 0.4 # Non Maximum Supression threshold
-SWAPRB = True
+NMS_THRESHOLD = 0.4  # Non Maximum Supression threshold
+SWAPRB = False
 SCALE = 0.00392  # 1/255
 
 with open(os.path.join('/model', DETECTION_MODEL, 'labels.json')) as json_data:
@@ -50,7 +50,7 @@ class Detector():
     def prediction(self, image):
         """Inference"""
         blob = cv2.dnn.blobFromImage(image, SCALE, (416, 416), (0, 0, 0),
-                                     swapRB=True, crop=False)
+                                     swapRB=SWAPRB, crop=False)
         self.model.setInput(blob)
         output = self.model.forward(get_output_layers(self.model))
         return output
@@ -76,9 +76,9 @@ class Detector():
                     )
                 )
         cols = ['x1', 'y1', 'w', 'h']
-        #indices = cv2.dnn.NMSBoxes(boxes, confidences, THRESHOLD, NMS_THRESHOLD)
-        indices = cv2.dnn.NMSBoxes(df[cols].values.tolist(), df['confidence'].tolist(), DETECTION_THRESHOLD, NMS_THRESHOLD)
+        indices = cv2.dnn.NMSBoxes(
+                df[cols].values.tolist(),
+                df['confidence'].tolist(), DETECTION_THRESHOLD, NMS_THRESHOLD)
         if len(indices) > 0:
             df = df.iloc[indices.flatten()]
         return df
-
