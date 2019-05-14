@@ -1,92 +1,122 @@
-import json
 import cv2
 import numpy as np
-from flask import Flask, send_from_directory, request
+from flask import Flask, send_from_directory, request, Blueprint
+from flask_restplus import Resource, Api, reqparse
 from process import predict_class, predict_objects
+from werkzeug.datastructures import FileStorage
 from urllib.request import urlopen
 
-
 app = Flask(__name__)
+app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
+
+##############
+#  FrontEnd  #
+##############
+
+blueprint_front = Blueprint(
+        'frontend', __name__, static_folder='../dist', url_prefix='/')
 
 
-@app.route('/<path:path>')
-def build(path):
-    return send_from_directory('../dist', path)
-
-
-@app.route('/')
-def status():
-    """Serve index.html from frontend application
-    """
-    return send_from_directory('../dist', "index.html")
-
-
-@app.route('/preview')
+@blueprint_front.route('/preview')
 def preview():
-    """Use `preview` route for index.html from frontend application
-    """
     return send_from_directory('../dist', "index.html")
 
 
-@app.route('/sivnorm')
+@blueprint_front.route('/sivnorm')
 def sivnorm():
-    """Use `sivnorm` route for frontend application
-    """
     return send_from_directory('../dist', "index.html")
 
 
-@app.route('/docs')
-def docs():
-    return send_from_directory('../docs/build/html', "index.html")
+@blueprint_front.route('/', defaults={'filename': 'index.html'})
+@blueprint_front.route('/<filename>')
+def Show_pages(filename):
+    return send_from_directory('../dist', filename)
 
 
-@app.route('/_static/<filename>')
-def docs_static(filename):
-    return send_from_directory('../docs/build/html/_static', filename)
+app.register_blueprint(blueprint_front)
 
 
-@app.route('/api/object_detection', methods=['POST'])
-def api_object_detection():
-    images = request.files.getlist('image', None)
-    url = request.form.get('url', None)
-    res = list()
-    if url:
-        try:
-            resp = urlopen(url)
-            img = np.asarray(bytearray(resp.read()), dtype="uint8")
-            img = cv2.imdecode(img, cv2.IMREAD_COLOR)
-            res.append(predict_objects(img))
-        except Exception as e:
-            print(url)
-            print(e)
-    if images:
-        for i in range(len(images)):
-            nparr = np.frombuffer(images[i].read(), np.uint8)
-            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            res.append(predict_objects(img))
-    return json.dumps(res)
+##########################
+#  Documentation Sphinx  #
+##########################
+
+blueprint_doc = Blueprint('documentation', __name__,
+                          static_folder='../docs/build/html/_static',
+                          url_prefix='/docs')
 
 
-@app.route('/api/predict', methods=['POST'])
-def api_predict():
-    images = request.files.getlist('image')
-    url = request.form.get('url', None)
-    res = list()
-    if url:
-        try:
-            resp = urlopen(url)
-            img = np.asarray(bytearray(resp.read()), dtype="uint8")
-            img = cv2.imdecode(img, cv2.IMREAD_COLOR)
-            res.append(predict_class(img))
-        except Exception as e:
-            print(url)
-            print(e)
-    if images:
-        for i in range(len(images)):
-            nparr = np.frombuffer(images[i].read(), np.uint8)
-            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            res.append(predict_class(img))
-    return json.dumps(res)
+@blueprint_doc.route('/', defaults={'filename': 'index.html'})
+@blueprint_doc.route('/<filename>')
+def show_pages(filename):
+    return send_from_directory('../docs/build/html', filename)
+
+
+app.register_blueprint(blueprint_doc)
+
+#################
+#  API SWAGGER  #
+#################
+
+blueprint = Blueprint('api', __name__, url_prefix='/api')
+api = Api(blueprint, doc='/doc', version='1.0', title='IA Flash',
+          description='Classification marque et modèle')
+app.register_blueprint(blueprint)
+
+parser = reqparse.RequestParser()
+parser.add_argument('url', type=str, location='form')
+parser.add_argument('image', type=FileStorage, location='files')
+
+
+@api.route('/object_detection')
+class ObjectDetection(Resource):
+    """Docstring for MyClass. """
+
+    @api.expect(parser)
+    def post(self):
+        images = request.files.getlist('image', None)
+        url = request.form.get('url', None)
+        res = list()
+        if url:
+            try:
+                resp = urlopen(url)
+                img = np.asarray(bytearray(resp.read()), dtype="uint8")
+                img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+                res.append(predict_objects(img))
+            except Exception as e:
+                print(url)
+                print(e)
+        if images:
+            for i in range(len(images)):
+                nparr = np.frombuffer(images[i].read(), np.uint8)
+                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                res.append(predict_objects(img))
+        return res
+
+
+@api.route('/predict')
+class MyClass(Resource):
+    """Docstring for MyClass. """
+
+    @api.expect(parser)
+    def post(self):
+        images = request.files.getlist('image')
+        url = request.form.get('url', None)
+        res = list()
+        if url:
+            try:
+                resp = urlopen(url)
+                img = np.asarray(bytearray(resp.read()), dtype="uint8")
+                img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+                res.append(predict_class(img))
+            except Exception as e:
+                print(url)
+                print(e)
+        if images:
+            for i in range(len(images)):
+                nparr = np.frombuffer(images[i].read(), np.uint8)
+                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                res.append(predict_class(img))
+        return res
 
 
 if __name__ == '__main__':
