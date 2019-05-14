@@ -2,13 +2,11 @@ import json
 import cv2
 import numpy as np
 from flask import Flask, send_from_directory, request
-from flask_cors import CORS
 from process import predict_class, predict_objects
 from urllib.request import urlopen
 
 
 app = Flask(__name__)
-cors = CORS(app)
 
 
 @app.route('/<path:path>')
