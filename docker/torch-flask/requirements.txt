@@ -3,5 +3,6 @@ flask-cors
 numpy==1.16.2
 pandas==0.24.2
 opencv-python-headless==4.0.0.21
-torchvision
-requests
+torchvision==0.2.2.post3
+requests==2.21.0
+Sphinx==2.0.1

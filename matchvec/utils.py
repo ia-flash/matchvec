@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 def timeit(method):
+    """Decorator to log spended time
+    """
 
     def timed(*args, **kw):
         ts = time.time()

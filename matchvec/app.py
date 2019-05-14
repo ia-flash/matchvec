@@ -18,17 +18,33 @@ def build(path):
 
 @app.route('/')
 def status():
+    """Serve index.html from frontend application
+    """
     return send_from_directory('../dist', "index.html")
 
 
 @app.route('/preview')
 def preview():
+    """Use `preview` route for index.html from frontend application
+    """
     return send_from_directory('../dist', "index.html")
 
 
 @app.route('/sivnorm')
 def sivnorm():
+    """Use `sivnorm` route for frontend application
+    """
     return send_from_directory('../dist', "index.html")
+
+
+@app.route('/docs')
+def docs():
+    return send_from_directory('../docs/build/html', "index.html")
+
+
+@app.route('/_static/<filename>')
+def docs_static(filename):
+    return send_from_directory('../docs/build/html/_static', filename)
 
 
 @app.route('/api/object_detection', methods=['POST'])
