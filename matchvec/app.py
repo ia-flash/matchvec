@@ -8,6 +8,8 @@ from urllib.request import urlopen
 
 app = Flask(__name__)
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
+app.config.SWAGGER_UI_OPERATION_ID = True
+app.config.SWAGGER_UI_REQUEST_DURATION = True
 
 ##############
 #  FrontEnd  #
@@ -18,17 +20,13 @@ blueprint_front = Blueprint(
 
 
 @blueprint_front.route('/preview')
-def preview():
-    return send_from_directory('../dist', "index.html")
-
-
 @blueprint_front.route('/sivnorm')
 def sivnorm():
     return send_from_directory('../dist', "index.html")
 
 
 @blueprint_front.route('/', defaults={'filename': 'index.html'})
-@blueprint_front.route('/<filename>')
+@blueprint_front.route('/<path:filename>')
 def Show_pages(filename):
     return send_from_directory('../dist', filename)
 
@@ -46,7 +44,7 @@ blueprint_doc = Blueprint('documentation', __name__,
 
 
 @blueprint_doc.route('/', defaults={'filename': 'index.html'})
-@blueprint_doc.route('/<filename>')
+@blueprint_doc.route('/<path:filename>')
 def show_pages(filename):
     return send_from_directory('../docs/build/html', filename)
 
@@ -61,6 +59,7 @@ blueprint = Blueprint('api', __name__, url_prefix='/api')
 api = Api(blueprint, doc='/doc', version='1.0', title='IA Flash',
           description='Classification marque et modèle')
 app.register_blueprint(blueprint)
+
 
 parser = reqparse.RequestParser()
 parser.add_argument('url', type=str, location='form')
