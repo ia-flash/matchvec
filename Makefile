@@ -34,3 +34,9 @@ down:
 
 logs:
 	$(COMPOSE) logs -f --tail 50
+
+docs/html:
+	$(COMPOSE) exec matchvec make -C /app/docs html
+
+docs: docs/html
+	echo "Post"

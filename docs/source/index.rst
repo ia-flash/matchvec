@@ -31,5 +31,11 @@ Here are some examples to get you started.
 .. automodule:: process
     :members:
 
+.. automodule:: ssd_detection
+    :members:
+
+.. automodule:: yolo_detection
+    :members:
+
 .. automodule:: utils
     :members:
