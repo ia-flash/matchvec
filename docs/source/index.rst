@@ -31,6 +31,9 @@ Here are some examples to get you started.
 .. automodule:: process
     :members:
 
+.. automodule:: classification
+    :members:
+
 .. automodule:: ssd_detection
     :members:
 

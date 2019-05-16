@@ -1,10 +1,13 @@
+"""Classification Marque Modèle"""
 import os
 import json
+import numpy as np
 import torch
 import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as transforms
 from collections import OrderedDict
+from typing import List, Tuple, Dict
 from utils import timeit
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -19,14 +22,22 @@ checkpoint = torch.load(
         '/model/resnet18-101/model_best.pth.tar', map_location='cpu')
 state_dict = checkpoint['state_dict']
 
-new_state_dict = OrderedDict()
+new_state_dict: Dict = OrderedDict()
 for k, v in state_dict.items():
     name = k[7:]  # remove 'module.' of dataparallel
     new_state_dict[name] = v
 
 
 class DatasetList(torch.utils.data.Dataset):
-    def __init__(self, samples, transform=None, target_transform=None):
+    """ Datalist generator
+
+    Args:
+        samples: Samples to use for inference
+        transform: Transformation to be done to samples
+        target_transform: Transformation done to the targets
+    """
+    def __init__(self, samples: Tuple[np.ndarray, List[float]],
+                 transform=None, target_transform=None):
         self.samples = samples
         if len(samples) == 0:
             raise(RuntimeError("Found 0 files in dataframe"))
@@ -53,9 +64,7 @@ class Crop(object):
     """Rescale the image in a sample to a given size.
 
     Args:
-        output_size (tuple or int): Desired output size. If tuple, output is
-            matched to output_size. If int, smaller of image edges is matched
-            to output_size keeping aspect ratio the same.
+        params: Tuple containing the sample and coordinates. The image is cropped using the coordiantes.
     """
     def __call__(self, params):
         sample, coords = params
@@ -64,10 +73,13 @@ class Crop(object):
         return sample
 
 
-@timeit
 class Classifier(object):
-    """Docstring for Classifier. """
+    """Classifier for marque et modèle
 
+    Classifies images using a pretrained model.
+    """
+
+    @timeit
     def __init__(self):
         """TODO: to be defined1. """
         self.classification_model = models.__dict__['resnet18'](pretrained=True)
@@ -75,7 +87,19 @@ class Classifier(object):
         self.classification_model.load_state_dict(new_state_dict)
         self.classification_model.eval()
 
-    def prediction(self, selected_boxes):
+    def prediction(self, selected_boxes: Tuple[np.ndarray, List[float]]):
+        """Inference in image
+
+        1. Crops, normalize and transforms the image to tensor
+        2. The image is forwarded to the resnet model
+        3. The results are concatenated
+
+        Args:
+            selected_boxes: Contains a List of Tuple with the image and coordinates of the crop.
+
+        Returns:
+            (final_pred, final_prob): The result is two lists with the top 5 class prediction and the probabilities
+        """
         # Crop and resize
         crop = Crop()
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -91,7 +115,8 @@ class Classifier(object):
                 DatasetList(selected_boxes, transform=preprocess),
                 batch_size=256, shuffle=False)
 
-        final_pred, final_prob = (list(), list())
+        final_pred: List = list()
+        final_prob: List = list()
         for inp in val_loader:
             output = self.classification_model(inp)
 

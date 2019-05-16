@@ -93,8 +93,8 @@ class ObjectDetection(Resource):
 
 
 @api.route('/predict')
-class MyClass(Resource):
-    """Docstring for MyClass. """
+class ClassPrediction(Resource):
+    """Predict vehicule class"""
 
     @api.expect(parser)
     def post(self):

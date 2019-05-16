@@ -1,9 +1,13 @@
 import cv2
 import logging
 import requests
+import numpy as np
+import pandas as pd
 from PIL import Image
 from itertools import combinations, product
+from typing import List, Dict, Union
 from utils import timeit
+
 from classification import Classifier
 from yolo_detection import Detector
 # from ssd_detection import Detector
@@ -23,7 +27,13 @@ DETECTION_IOU_THRESHOLD = 0.9
 DETECTION_SIZE_THRESHOLD = 0.01
 
 
-def IoU(boxA, boxB):
+def IoU(boxA: pd.Series, boxB: pd.Series) -> float:
+    """ Calculate IoU
+
+    Args:
+        boxA: Bounding box A
+        boxB: Bounding box B
+    """
     # determine the (x, y)-coordinates of the intersection rectangle
     xA = max(boxA['x1'], boxB['x1'])
     yA = max(boxA['y1'], boxB['y1'])
@@ -42,8 +52,16 @@ def IoU(boxA, boxB):
     return iou
 
 
-def filter_by_size(df, image):
-    """Filter box too small"""
+def filter_by_size(df: pd.DataFrame, image: np.ndarray) -> pd.DataFrame:
+    """Filter box too small
+
+    Args:
+        df: Detected boxes
+        image: Image used for detection
+
+    Returns:
+        df: Filtered boxes
+    """
     height, width = image.shape[:-1]
     surf = width * height
     df = df.assign(
@@ -59,12 +77,19 @@ def filter_by_size(df, image):
     return df
 
 
-def filter_by_iou(df):
-    """Filter box of car and truck when IoU>DETECTION_IOU_THRESHOLD """
+def filter_by_iou(df: pd.DataFrame) -> pd.DataFrame:
+    """Filter box of car and truck when IoU>DETECTION_IOU_THRESHOLD
+
+    Args:
+        df: Detected boxes
+
+    Returns:
+        df: Filtered boxes
+    """
     df['surf_box'] = (df['x2'] - df['x1']) * (df['y2'] - df['y1'])
     df_class = df[df['class_name'].isin(['car', 'truck'])].groupby('class_name')
     prod_class = combinations(df_class, 2)
-    id_to_drop = []
+    id_to_drop: List = list()
     for (class_a, df_a), (class_b, df_b) in prod_class:
         for (id1, vec1), (id2, vec2) in product(df_a.iterrows(), df_b.iterrows()):
             iou = IoU(vec1, vec2)
@@ -98,7 +123,15 @@ def test_app_multiple():
 
 
 @timeit
-def predict_objects(img):
+def predict_objects(img: np.ndarray) -> List[Union[str, float]]:
+    """Object detection
+
+    Args:
+        img: Image to make inference
+
+    Returns:
+        result: Predictions
+    """
     result = detector.prediction(img)
     df = detector.create_df(result, img)
 
@@ -111,7 +144,15 @@ def predict_objects(img):
 
 
 @timeit
-def predict_class(img):
+def predict_class(img: np.ndarray) -> List[Union[str, float]]:
+    """Classficate image
+
+    Args:
+        img: Image to make inference
+
+    Returns:
+        result: Predictions
+    """
     result = detector.prediction(img)
     df = detector.create_df(result, img)
 

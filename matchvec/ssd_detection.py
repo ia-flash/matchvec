@@ -2,6 +2,7 @@
 import os
 import cv2
 import json
+import numpy as np
 import pandas as pd
 from utils import timeit
 
@@ -14,10 +15,15 @@ with open(os.path.join('/model', DETECTION_MODEL, 'labels.json')) as json_data:
     CLASS_NAMES = json.load(json_data)
 
 
-@timeit
 class Detector():
-    """SSD Mobilenet object detection"""
+    """SSD Mobilenet object detection
 
+    DETECTION_MODEL: Detection model to use
+    DETECTION_THRESHOLD: Detection threshold
+    SWAPRB: Swap R and B chanels (usefull when opening using opencv) (Default: False)
+    """
+
+    @timeit
     def __init__(self):
         self.model = cv2.dnn.readNetFromTensorflow(
                 os.path.join(
@@ -26,8 +32,14 @@ class Detector():
                     '/model', DETECTION_MODEL, 'config.pbtxt')
         )
 
-    def prediction(self, image):
-        """Inference"""
+    def prediction(self, image: np.ndarray) -> np.ndarray:
+        """Inference
+
+        Args:
+            image: image to make inference
+        Returns:
+            result: Predictions form SSD Mobilenet
+        """
         self.model.setInput(
                 cv2.dnn.blobFromImage(
                     image, size=(300, 300),
@@ -38,7 +50,16 @@ class Detector():
         result = cvOut[0, 0, :, :]
         return result
 
-    def create_df(self, result, image):
+    def create_df(self, result: np.ndarray, image: np.ndarray) -> pd.DataFrame:
+        """Filter predictions and create an output DataFrame
+
+        Args:
+            result: Result from prediction model
+            image: Image where the inference has been made
+
+        Returns:
+            df: Object detection filtered predictions
+        """
         height, width = image.shape[:-1]
         df = pd.DataFrame(
                 result,
