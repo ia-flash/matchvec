@@ -8,8 +8,20 @@ services:
       - docker/env.list
     environment:
      - TORCH_HOME=/model
-    ports:
-     - ${APP_PORT}:5000
+    expose: 
+     - ${APP_PORT}
     volumes:
      - ./:/app
      - ./model:/model
+    networks:
+     - isolated_nw
+    labels:
+      - traefik.enable=true
+      - traefik.backend=matchvec
+      - traefik.port=5000
+      - traefik.frontend.rule=PathPrefix:/docs,/api,/swaggerui
+
+networks:
+  isolated_nw:
+    external:
+     name: isolated_nw

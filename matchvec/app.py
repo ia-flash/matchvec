@@ -11,28 +11,6 @@ app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
 app.config.SWAGGER_UI_OPERATION_ID = True
 app.config.SWAGGER_UI_REQUEST_DURATION = True
 
-##############
-#  FrontEnd  #
-##############
-
-blueprint_front = Blueprint(
-        'frontend', __name__, static_folder='../dist', url_prefix='/')
-
-
-@blueprint_front.route('/preview')
-@blueprint_front.route('/sivnorm')
-def sivnorm():
-    return send_from_directory('../dist', "index.html")
-
-
-@blueprint_front.route('/', defaults={'filename': 'index.html'})
-@blueprint_front.route('/<path:filename>')
-def Show_pages(filename):
-    return send_from_directory('../dist', filename)
-
-
-app.register_blueprint(blueprint_front)
-
 
 ##########################
 #  Documentation Sphinx  #
