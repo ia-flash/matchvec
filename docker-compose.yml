@@ -8,11 +8,11 @@ services:
       - docker/env.list
     environment:
      - TORCH_HOME=/model
-    expose: 
+    expose:
      - ${APP_PORT}
     volumes:
      - ./:/app
-     - ./model:/model
+     - ${MODEL_PATH}:/model
     networks:
      - isolated_nw
     labels:
@@ -25,3 +25,4 @@ networks:
   isolated_nw:
     external:
      name: isolated_nw
+

@@ -1,13 +1,15 @@
 # The Makefile defines all builds/tests steps
 
 # include .env file
-include docker/env.list
+include docker/conf.list
 
 # compose command to merge production file and and dev/tools overrides
-COMPOSE?=docker-compose -p $(PROJECT_NAME) -f docker-compose.yml 
+COMPOSE?=docker-compose -p $(PROJECT_NAME) -f docker-compose.yml
 
 export COMPOSE
 export APP_PORT
+export MODEL_PATH
+
 
 # this is usefull with most python apps in dev mode because if stdout is
 # buffered logs do not shows in realtime
