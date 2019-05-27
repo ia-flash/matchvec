@@ -1,0 +1,10 @@
+---
+version: '2.3'
+services:
+  matchvec:
+    restart: always
+
+networks:
+  isolated_nw:
+    external:
+      name: isolated_nw

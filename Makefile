@@ -3,8 +3,11 @@
 # include .env file
 include docker/conf.list
 
-# compose command to merge production file and and dev/tools overrides
+# compose command for dev env
 COMPOSE?=docker-compose -p $(PROJECT_NAME) -f docker-compose.yml
+
+# compose command for prod env
+#COMPOSE?=docker-compose -p $(PROJECT_NAME) -f docker-compose.yml -f docker-restart.yml
 
 export COMPOSE
 export APP_PORT
