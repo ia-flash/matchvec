@@ -1,4 +1,5 @@
 docker/env.list
+docker/conf.list
 __pycache__
 .mypy_cache
 dist
