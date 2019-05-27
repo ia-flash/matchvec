@@ -1,16 +1,17 @@
+import os
 import cv2
 import logging
 import requests
 import numpy as np
 import pandas as pd
 from PIL import Image
+from importlib import import_module
 from itertools import combinations, product
-from typing import List, Dict, Union
+from typing import List, Union
 from utils import timeit
 
 from classification import Classifier
-from yolo_detection import Detector
-# from ssd_detection import Detector
+Detector = import_module(os.getenv('DETECTION_MODEL') + '_detection').Detector
 detector = Detector()
 classifier = Classifier()
 

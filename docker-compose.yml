@@ -1,20 +1,19 @@
+---
 version: '2.3'
 services:
-   matchvec:
+  matchvec:
     container_name: ${USER}-matchvec
     build:
       context: ./docker/torch-flask
     env_file:
       - docker/env.list
-    environment:
-     - TORCH_HOME=/model
     expose:
-     - ${APP_PORT}
+      - ${APP_PORT}
     volumes:
-     - ./:/app
-     - ${MODEL_PATH}:/model
+      - ./:/app
+      - ${MODEL_PATH}:/model
     networks:
-     - isolated_nw
+      - isolated_nw
     labels:
       - traefik.enable=true
       - traefik.backend=matchvec
@@ -24,5 +23,4 @@ services:
 networks:
   isolated_nw:
     external:
-     name: isolated_nw
-
+      name: isolated_nw

@@ -1,3 +1,4 @@
+import os
 import cv2
 import numpy as np
 from flask import Flask, send_from_directory, request, Blueprint
@@ -97,4 +98,4 @@ class ClassPrediction(Resource):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', debug=bool(os.getenv('DEBUG')))

@@ -11,15 +11,18 @@ from typing import List, Tuple, Dict
 from utils import timeit
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+CLASSIFICATION_MODEL = os.getenv('CLASSIFICATION_MODEL')
 
 # Get label
-filename = os.path.join('/model/resnet18-101', 'idx_to_class.json')
+filename = os.path.join('/model', CLASSIFICATION_MODEL,  'idx_to_class.json')
 with open(filename) as json_data:
     all_categories = json.load(json_data)
     CLASS_NUMBER = len(all_categories)
 
 checkpoint = torch.load(
-        '/model/resnet18-101/model_best.pth.tar', map_location='cpu')
+        os.path.join('/model', CLASSIFICATION_MODEL, 'model_best.pth.tar'),
+        map_location='cpu'
+        )
 state_dict = checkpoint['state_dict']
 
 new_state_dict: Dict = OrderedDict()
