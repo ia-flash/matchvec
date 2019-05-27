@@ -16,13 +16,22 @@ export MODEL_PATH
 PYTHONUNBUFFERED=1
 export PYTHONUNBUFFERED
 
+
+docker/env.list:
+	# Copy default config
+	cp docker/env.list.sample docker/env.list
+
+docker/conf.list:
+	# Copy default config
+	cp docker/conf.list.sample docker/conf.list
+
 build:
 	$(COMPOSE) build
 
-dev:
+dev: docker/env.list docker/conf.list
 	$(COMPOSE) up
 
-up:
+up: docker/env.list docker/conf.list
 	$(COMPOSE) up -d
 
 stop:
