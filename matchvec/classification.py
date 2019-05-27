@@ -123,7 +123,7 @@ class Classifier(object):
         for inp in val_loader:
             output = self.classification_model(inp)
 
-            softmax = nn.Softmax()
+            softmax = nn.Softmax(dim=1)
             norm_output = softmax(output)
 
             probs, preds = norm_output.topk(5, 1, True, True)
