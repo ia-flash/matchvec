@@ -54,3 +54,6 @@ docs/html:
 
 docs: docs/html
 	echo "Post"
+
+test:
+	$(COMPOSE) exec matchvec python tests/test_process.py
