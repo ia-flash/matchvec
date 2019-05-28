@@ -36,20 +36,10 @@ for k, v in state_dict.items():
 def returnCAM(feature_conv, weight_softmax, class_idx):
     # generate the class activation maps upsample to 256x256
     size_upsample = (256, 256)
-    #bz, nc, h, w = feature_conv.shape
     nc, h, w = feature_conv.shape
-    print("FEAture")
-    print(feature_conv.shape)
-    #myfeature_conf = np.expand_dims(feature_conv[0], axis=0)
-    myfeature_conf = np.expand_dims(feature_conv, axis=0)
-    print(myfeature_conf.shape)
-    print("weift")
-    print(weight_softmax.shape)
-    print(weight_softmax[0].shape)
     output_cam = []
     for idx in class_idx:
-        #cam = weight_softmax[idx].dot(feature_conv.reshape((nc, h*w)))
-        cam = weight_softmax[idx].dot(myfeature_conf.reshape((nc, h*w)))
+        cam = weight_softmax[idx].dot(feature_conv.reshape((nc, h*w)))
         cam = cam.reshape(h, w)
         cam = cam - np.min(cam)
         cam_img = cam / np.max(cam)
@@ -57,10 +47,6 @@ def returnCAM(feature_conv, weight_softmax, class_idx):
         output_cam.append(cv2.resize(cam_img, size_upsample))
     return output_cam
 
-#def hook_feature(module, input, output):
-#    #features_blobs.append(output.data.cpu().numpy())
-#    global features_blobs
-#    features_blobs = output.data.cpu().numpy()
 
 class DatasetList(torch.utils.data.Dataset):
     """ Datalist generator
@@ -121,6 +107,7 @@ class Classifier(object):
         self.classification_model.load_state_dict(new_state_dict)
         self.classification_model.eval()
         self.features_blobs = None
+        self.n_pred = 5
 
     def hook_feature(self, module, input, output):
         #features_blobs.append(output.data.cpu().numpy())
@@ -144,6 +131,27 @@ class Classifier(object):
                 DatasetList(selected_boxes, transform=preprocess),
                 batch_size=256, shuffle=False)
         return val_loader
+
+    def create_CAM(self, selected_box, weight_softmax, features_blob, pred, label, i):
+        coords = selected_box
+        crop_img = image[coords[1]: coords[3], coords[0]: coords[2]]
+        height, width, _ = crop_img.shape
+        #features_blob = self.features_blobs[i]
+        print("Feature blob", features_blob.shape)
+        #CAMs = returnCAM(features_blob, weight_softmax, pred[i][:self.n_pred])
+        CAMs = returnCAM(features_blob, weight_softmax, pred[:self.n_pred])
+        print("Cams", len(CAMs))
+        CAM_images = list()
+        for ind in range(len(CAMs)):
+            heatmap = cv2.applyColorMap(cv2.resize(CAMs[ind], (width, height)), cv2.COLORMAP_JET)
+            result = heatmap * 0.6 + crop_img * 0.5
+            #cv2.putText(result, pred_class[i][ind],
+            cv2.putText(result, label[ind],
+                        (0, int(height/10)), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5, (255, 255, 255), 2)
+            CAM_images.append(result)
+            cv2.imwrite('imgCAM{}-{}.jpg'.format(i, ind), result)
+        return CAM_images
 
 
     @timeit
@@ -196,9 +204,6 @@ class Classifier(object):
 
     @timeit
     def generate_CAM(self, selected_boxes, image):
-        # Top predictions
-        n_pred = 5
-
         # Last conv layer for Resnet18
         finalconv_name = 'layer4'
 
@@ -221,7 +226,7 @@ class Classifier(object):
             softmax = nn.Softmax(dim=1)
             h_x = softmax(logit)
             probs, idx = h_x.sort(0, True)
-            _, preds = h_x.topk(n_pred, 1, True, True)
+            _, preds = h_x.topk(self.n_pred, 1, True, True)
             pred = preds.data.cpu().tolist()
             pred_class = [
                     [all_categories[str(x)] for x in pred[i]]
@@ -232,22 +237,10 @@ class Classifier(object):
             final_pred.extend(pred_class)
 
             for i in range(len(inp)):
-                coords = selected_boxes[i][1]
-                crop_img = image[coords[1]: coords[3], coords[0]: coords[2]]
-                height, width, _ = crop_img.shape
-                features_blob = self.features_blobs[i]
-                print("Feature blob", features_blob.shape)
-                CAMs = returnCAM(features_blob, weight_softmax, pred[i][:n_pred])
-                print("Cams", len(CAMs))
-                CAM_images = list()
-                for ind in range(len(CAMs)):
-                    heatmap = cv2.applyColorMap(cv2.resize(CAMs[ind], (width, height)), cv2.COLORMAP_JET)
-                    result = heatmap * 0.6 + crop_img * 0.5
-                    cv2.putText(result, pred_class[i][ind],
-                                (0, int(height/10)), cv2.FONT_HERSHEY_SIMPLEX,
-                                0.5, (255, 255, 255), 2)
-                    CAM_images.append(result)
-                    cv2.imwrite('imgCAM{}-{}.jpg'.format(i, ind), result)
+                CAM_images = self.create_CAM(
+                        selected_boxes[i][1], weight_softmax, self.features_blobs[i],
+                        pred[i], pred_class[i], i
+                        )
                 final_CAM.append(CAM_images)
 
         return dict(pred=final_pred, prod=final_prob, CAM=final_CAM)
