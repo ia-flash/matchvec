@@ -80,3 +80,11 @@ class Detector():
                 )
         df = df[df['confidence'] > DETECTION_THRESHOLD]
         return df
+
+
+if __name__ == "__main__":
+    image = cv2.imread("./tests/clio-peugeot.jpg")
+    detector = Detector()
+    output = detector.prediction(image)
+    df = detector.create_df(output, image)
+    print(df)

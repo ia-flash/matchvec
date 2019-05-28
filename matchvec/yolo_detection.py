@@ -119,3 +119,11 @@ class Detector():
         if len(indices) > 0:
             df = df.iloc[indices.flatten()]
         return df
+
+
+if __name__ == "__main__":
+    image = cv2.imread("./tests/clio-peugeot.jpg")
+    detector = Detector()
+    output = detector.prediction(image)
+    df = detector.create_df(output, image)
+    print(df)
