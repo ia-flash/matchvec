@@ -5,7 +5,8 @@ from flask import Flask, send_from_directory, request, Blueprint
 from flask_restplus import Resource, Api, reqparse
 from process import predict_class, predict_objects
 from werkzeug.datastructures import FileStorage
-from urllib.request import urlopen
+from urllib.request import urlopen, HTTPError, URLError
+from utils import logger
 
 app = Flask(__name__)
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
@@ -56,13 +57,13 @@ class ObjectDetection(Resource):
         res = list()
         if url:
             try:
-                resp = urlopen(url)
+                resp = urlopen(url, timeout=3)
                 img = np.asarray(bytearray(resp.read()), dtype="uint8")
                 img = cv2.imdecode(img, cv2.IMREAD_COLOR)
                 res.append(predict_objects(img))
             except Exception as e:
-                print(url)
-                print(e)
+                logger.debug(e)
+                logger.debug(url)
         if images:
             for i in range(len(images)):
                 nparr = np.frombuffer(images[i].read(), np.uint8)
@@ -87,8 +88,9 @@ class ClassPrediction(Resource):
                 img = cv2.imdecode(img, cv2.IMREAD_COLOR)
                 res.append(predict_class(img))
             except Exception as e:
-                print(url)
-                print(e)
+                logger.debug(e)
+                logger.debug(url)
+                res.append(list())
         if images:
             for i in range(len(images)):
                 nparr = np.frombuffer(images[i].read(), np.uint8)
