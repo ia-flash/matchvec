@@ -5,8 +5,15 @@ services:
     container_name: ${USER}-matchvec
     build:
       context: ./docker/torch-flask
+      args:
+        - http_proxy=${http_proxy}
+        - https_proxy=${http_proxy}
     env_file:
       - docker/env.list
+    environment:
+      - http_proxy=${http_proxy}
+      - https_proxy=${http_proxy}
+      - no_proxy=${no_proxy}
     expose:
       - ${APP_PORT}
     volumes:

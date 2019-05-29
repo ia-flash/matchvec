@@ -103,6 +103,7 @@ class ClassPrediction(Resource):
             for i in range(len(images)):
                 nparr = np.frombuffer(images[i].read(), np.uint8)
                 img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                cv2.imwrite('/app/img.jpg',img)
                 res.append(predict_class(img))
         return res
 

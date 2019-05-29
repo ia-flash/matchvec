@@ -1,0 +1,6 @@
+version: '2.3'
+services:
+  matchvec:
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0

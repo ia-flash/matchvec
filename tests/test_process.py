@@ -17,7 +17,10 @@ class TestFileFail(unittest.TestCase):
         img = cv2.imread('tests/clio-peugeot.jpg')
         print('Testing image', img.shape)
         res = predict_class(img)
+
         self.assertIsInstance(res, list)
+        assert any(['CLIO' in vehicule['label'] for vehicule in res]),\
+            'There is no clio in first predictions, got {}'.format(res)
 
     def test_object(self):
         img = cv2.imread('tests/clio-peugeot.jpg')
