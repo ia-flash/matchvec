@@ -203,7 +203,7 @@ class Classifier(object):
         return final_pred, final_prob
 
     @timeit
-    def generate_CAM(self, selected_boxes, image):
+    def generate_CAM(self, selected_boxes, image, CAM=False):
         # Last conv layer for Resnet18
         finalconv_name = 'layer4'
 
@@ -224,9 +224,8 @@ class Classifier(object):
             logit = self.classification_model(inp)
 
             softmax = nn.Softmax(dim=1)
-            h_x = softmax(logit)
-            probs, idx = h_x.sort(0, True)
-            _, preds = h_x.topk(self.n_pred, 1, True, True)
+            norm_output = softmax(logit)
+            probs, preds = norm_output.topk(5, 1, True, True)
             pred = preds.data.cpu().tolist()
             pred_class = [
                     [all_categories[str(x)] for x in pred[i]]
@@ -236,14 +235,15 @@ class Classifier(object):
             final_prob.extend(prob)
             final_pred.extend(pred_class)
 
-            for i in range(len(inp)):
-                CAM_images = self.create_CAM(
-                        selected_boxes[i][1], weight_softmax, self.features_blobs[i],
-                        pred[i], pred_class[i], i
-                        )
-                final_CAM.append(CAM_images)
+            if CAM:
+                for i in range(len(inp)):
+                    CAM_images = self.create_CAM(
+                            selected_boxes[i][1], weight_softmax, self.features_blobs[i],
+                            pred[i], pred_class[i], i
+                            )
+                    final_CAM.append(CAM_images)
 
-        return dict(pred=final_pred, prod=final_prob, CAM=final_CAM)
+        return dict(pred=final_pred, prob=final_prob, CAM=final_CAM)
 
 if __name__ == "__main__":
     from PIL import Image
@@ -269,7 +269,8 @@ if __name__ == "__main__":
                 )
             )
 
-    result = classifier.generate_CAM(selected_boxes, image)
+    result = classifier.generate_CAM(selected_boxes, image, CAM=False)
     print(result.keys())
-    pred, prob = classifier.prediction(selected_boxes)
-    print(pred, prob)
+    print(len(result['CAM']))
+    #print(len(result['CAM'][0]))
+    #pred, prob = classifier.prediction(selected_boxes)
