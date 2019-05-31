@@ -113,7 +113,6 @@ class Classifier(object):
         #features_blobs.append(output.data.cpu().numpy())
         self.features_blobs = output.data.cpu().numpy()
 
-
     def create_test_set(self, selected_boxes):
         # Crop and resize
         crop = Crop()
@@ -132,27 +131,42 @@ class Classifier(object):
                 batch_size=256, shuffle=False)
         return val_loader
 
-    def create_CAM(self, selected_box, weight_softmax, features_blob, pred, label, i):
+    def create_CAM(self, image, selected_box, weight_softmax, features_blob, pred, label, i):
         coords = selected_box
         crop_img = image[coords[1]: coords[3], coords[0]: coords[2]]
         height, width, _ = crop_img.shape
         #features_blob = self.features_blobs[i]
-        print("Feature blob", features_blob.shape)
         #CAMs = returnCAM(features_blob, weight_softmax, pred[i][:self.n_pred])
         CAMs = returnCAM(features_blob, weight_softmax, pred[:self.n_pred])
-        print("Cams", len(CAMs))
         CAM_images = list()
-        for ind in range(len(CAMs)):
+        #for ind in range(len(CAMs)):
+        for ind in range(1):
             heatmap = cv2.applyColorMap(cv2.resize(CAMs[ind], (width, height)), cv2.COLORMAP_JET)
             result = heatmap * 0.6 + crop_img * 0.5
-            #cv2.putText(result, pred_class[i][ind],
-            cv2.putText(result, label[ind],
-                        (0, int(height/10)), cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5, (255, 255, 255), 2)
-            CAM_images.append(result)
-            cv2.imwrite('imgCAM{}-{}.jpg'.format(i, ind), result)
-        return CAM_images
+            #cv2.putText(result, label[ind],
+            #            (0, int(height/10)), cv2.FONT_HERSHEY_SIMPLEX,
+            #            0.5, (255, 255, 255), 2)
+            ##CAM_images.append(result)
+            #retval, buffer = cv2.imencode('.jpg', result)
+            ##CAM_images.append(buffer.tostring())
+            #jpg_as_text = base64.b64encode(buffer)
+            ##jpg_as_text = base64.encodestring(buffer)
+            #CAM_images.append(jpg_as_text.decode("utf-8"))
+            #CAM_images.append(jpg_as_text)
+            #CAM_images.append(Response(cv2.imencode('.jpg', result)[1].tobytes(), mimetype='image/jpeg'))
+            #print(cv2.resize(CAMs[ind], (10, 10)).shape)
+            arr = cv2.resize(CAMs[ind], (width, height))
+            x, y = np.where(arr > 210)
+            z = arr[x, y]
+            #print(len(x), len(y), len(z))
+            CAM_images.append(np.stack([x,y,z], axis=1).tolist())
+            #CAM_images.append([x, y, z)
+            #arr_reshaped = np.transpose(CAMs[ind], (2, 1, 0))
+            #print(arr_reshaped.shape)
+            #print(arr_reshaped)
+            #cv2.imwrite('imgCAM{}-{}.jpg'.format(i, ind), cv2.resize(CAMs[ind], (width, height)))
 
+        return CAM_images
 
     @timeit
     def prediction(self, selected_boxes: Tuple[np.ndarray, List[float]]):
@@ -238,12 +252,14 @@ class Classifier(object):
             if CAM:
                 for i in range(len(inp)):
                     CAM_images = self.create_CAM(
-                            selected_boxes[i][1], weight_softmax, self.features_blobs[i],
-                            pred[i], pred_class[i], i
+                            image, selected_boxes[i][1], weight_softmax,
+                            self.features_blobs[i], pred[i],
+                            pred_class[i], i
                             )
                     final_CAM.append(CAM_images)
 
         return dict(pred=final_pred, prob=final_prob, CAM=final_CAM)
+
 
 if __name__ == "__main__":
     from PIL import Image

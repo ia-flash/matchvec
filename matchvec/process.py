@@ -169,10 +169,12 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
 
     # Selected box
     if len(selected_boxes) > 0:
-        pred, prob = classifier.prediction(selected_boxes)
+        # pred, prob = classifier.prediction(selected_boxes)
+        result = classifier.generate_CAM(selected_boxes, img, CAM=True)
         df = df.assign(
-                pred=pred,
-                prob=prob,
+                pred=result['pred'],
+                prob=result['prob'],
+                CAM=result['CAM'],
                 label=lambda x: (
                     x['pred'].apply(lambda x: x[0]) +
                     ": " + (
@@ -182,7 +184,8 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
                     )
                 )
         cols = ['x1', 'y1', 'x2', 'y2', 'pred', 'prob', 'class_name',
-                'confidence', 'label']
+                'confidence', 'label', 'CAM']
+        logger.debug(df[['CAM', 'label']])
         return df[cols].to_dict(orient='records')
 
     else:
