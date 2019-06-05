@@ -7,11 +7,11 @@ include docker/conf.list
 COMPOSE?=docker-compose -p $(PROJECT_NAME) -f docker-compose.yml
 
 # compose command for prod env
-#COMPOSE?=docker-compose -p $(PROJECT_NAME) -f docker-compose.yml -f docker-restart.yml
+ifeq ($(RESTART),1)
+	COMPOSE:=docker-compose -p $(PROJECT_NAME) -f docker-compose.yml -f docker-restart.yml
+endif
 
-export COMPOSE
-export APP_PORT
-export MODEL_PATH
+export
 
 
 # this is usefull with most python apps in dev mode because if stdout is
