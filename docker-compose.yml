@@ -1,13 +1,13 @@
----
 version: '2.3'
 services:
   matchvec:
     container_name: ${USER}-matchvec
     build:
-      context: ./docker/torch-flask
+      context: ./docker/cpu
       args:
         - http_proxy=${http_proxy}
         - https_proxy=${http_proxy}
+    runtime: nvidia
     env_file:
       - docker/env.list
     environment:

@@ -14,16 +14,18 @@ class TestFileFail(unittest.TestCase):
             self.assertEqual('200 OK', response.status)
 
     def test_class(self):
-        img = cv2.imread('tests/clio-peugeot.jpg')
+        img = cv2.imread('tests/clio-peugeot.jpg') # BGR
+        img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
+
         print('Testing image', img.shape)
         res = predict_class(img)
 
         self.assertIsInstance(res, list)
-        assert any(['CLIO' in vehicule['label'] for vehicule in res]),\
-            'There is no clio in first predictions, got {}'.format(res)
+        assert any(['CLIO' in vehicule['label'] for vehicule in res]), 'There is no clio in first predictions'
 
     def test_object(self):
         img = cv2.imread('tests/clio-peugeot.jpg')
+        img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
         print('Testing image', img.shape)
         res = predict_objects(img)
         self.assertIsInstance(res, list)

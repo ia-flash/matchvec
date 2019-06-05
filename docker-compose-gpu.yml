@@ -1,6 +1,9 @@
 version: '2.3'
 services:
   matchvec:
+    container_name: ${USER}-matchvec
+    build:
+      context: ./docker/gpu
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=0

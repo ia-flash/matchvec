@@ -135,7 +135,7 @@ class Detector():
         Returns:
             result: Yolo boxes from object detections
         """
-
+        image = cv2.cvtColor(image , cv2.COLOR_RGB2BGR)
         result = inference_detector(self.model, image, self.cfg)
         return result
 
@@ -154,7 +154,7 @@ class Detector():
         df = save_result(result,
                     class_to_keep=class_to_keep,
                     dataset='coco',
-                    score_thr=0.3)
+                    score_thr=DETECTION_THRESHOLD)
         df = pd.DataFrame(df)
         df['label'] = df['class_name'] +' : ' + df['confidence'].astype(str).str.slice(stop=4)
         print(df)
