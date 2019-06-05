@@ -1,7 +1,7 @@
 import os
 import cv2
 import numpy as np
-from flask import Flask, send_from_directory, request, Blueprint
+from flask import Flask, send_from_directory, request, Blueprint, url_for
 from flask_restplus import Resource, Api, reqparse
 from process import predict_class, predict_objects
 from werkzeug.datastructures import FileStorage
@@ -34,8 +34,18 @@ app.register_blueprint(blueprint_doc)
 #  API SWAGGER  #
 #################
 
+class Custom_API(Api):
+    @property
+    def specs_url(self):
+        '''
+        The Swagger specifications absolute url (ie. `swagger.json`)
+
+        :rtype: str
+        '''
+        return url_for(self.endpoint('specs'), _external=False)
+
 blueprint = Blueprint('api', __name__, url_prefix='/api')
-api = Api(blueprint, doc='/doc', version='1.0', title='IA Flash',
+api = Custom_API(blueprint, doc='/doc', version='1.0', title='IA Flash',
           description='Classification marque et modèle')
 app.register_blueprint(blueprint)
 
