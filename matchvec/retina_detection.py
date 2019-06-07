@@ -21,6 +21,7 @@ print(device)
 
 #modele = dict(conf="retinanet_r50_fpn_1x",
 #              checkpoint="retinanet_r50_fpn_1x_20181125-3d3c2142")
+# wget href="https://s3.ap-northeast-2.amazonaws.com/open-mmlab/mmdetection/models/retinanet_x101_64x4d_fpn_1x_20181218-2f6f778b.pth
 modele = dict(conf="retinanet_x101_64x4d_fpn_1x",
           checkpoint="retinanet_x101_64x4d_fpn_1x_20181218-2f6f778b")
 
