@@ -15,7 +15,6 @@ from utils import timeit
 
 DETECTION_MODEL = 'retina'
 DETECTION_THRESHOLD = 0.4
-NMS_THRESHOLD = 0.4  # Non Maximum Supression threshold
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
@@ -115,7 +114,7 @@ class Detector():
     """
     @timeit
     def __init__(self):
-        cfg = mmcv.Config.fromfile('/usr/src/app/configs/%s.py'%modele['conf'])
+        cfg = mmcv.Config.fromfile('/usr/src/configs/%s.py'%modele['conf'])
         cfg.model.pretrained = None
 
         self.model = build_detector(cfg.model, test_cfg=cfg.test_cfg)
@@ -139,6 +138,23 @@ class Detector():
         result = inference_detector(self.model, image, self.cfg)
         return result
 
+    def batch_prediction(self, image: List[np.ndarray]) -> List[List[np.ndarray]]:
+        """ Inference
+
+        Make inference
+
+        Args:
+            image: input image
+
+        Returns:
+            result: Yolo boxes from object detections
+        """
+        result = []
+        for one_image in image :
+            one_result = prediction(one_image)
+            result.append(one_result)
+        return result
+
     def create_df(self, result: List[np.ndarray],
                   image: np.ndarray) -> pd.DataFrame:
         """Filter predictions and create an output DataFrame
@@ -157,7 +173,24 @@ class Detector():
                     score_thr=DETECTION_THRESHOLD)
         df = pd.DataFrame(df)
         df['label'] = df['class_name'] +' : ' + df['confidence'].astype(str).str.slice(stop=4)
-        print(df)
+
+        return df
+
+    def batch_create_df(self, result: List[List[np.ndarray]],
+                  image: List[np.ndarray]) -> List[pd.DataFrame]:
+        """Filter predictions and create an output DataFrame
+
+        Args:
+            result: Result from prediction model
+            image: Image where the inference has been made
+
+        Returns:
+            df: Onject detection predictions filtered
+        """
+        df = []
+        for one_result, one_image in zip(result,image) :
+            one_df = create_df(one_result, one_image)
+            df.append(one_df)
 
 
         return df

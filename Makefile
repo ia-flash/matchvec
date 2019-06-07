@@ -13,7 +13,7 @@ endif
 COMPOSE?=docker-compose -p $(PROJECT_NAME) -f docker-compose.yml
 # compose command for prod env
 ifeq ($(RESTART),1)
-	COMPOSE := docker-restart.yml
+	COMPOSE := $(COMPOSE) docker-restart.yml
 endif
 
 export
