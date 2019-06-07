@@ -69,6 +69,7 @@ class ObjectDetection(Resource):
                 resp = urlopen(url)
                 img = np.asarray(bytearray(resp.read()), dtype="uint8")
                 img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+                img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
                 res.append(predict_objects(img))
             except Exception as e:
                 print(url)
@@ -77,6 +78,7 @@ class ObjectDetection(Resource):
             for i in range(len(images)):
                 nparr = np.frombuffer(images[i].read(), np.uint8)
                 img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
                 res.append(predict_objects(img))
         return res
 
@@ -89,12 +91,14 @@ class ClassPrediction(Resource):
     def post(self):
         images = request.files.getlist('image')
         url = request.form.get('url', None)
+
         res = list()
         if url:
             try:
                 resp = urlopen(url)
                 img = np.asarray(bytearray(resp.read()), dtype="uint8")
                 img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+                img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
                 res.append(predict_class(img))
             except Exception as e:
                 print(url)
@@ -103,6 +107,7 @@ class ClassPrediction(Resource):
             for i in range(len(images)):
                 nparr = np.frombuffer(images[i].read(), np.uint8)
                 img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
                 res.append(predict_class(img))
         return res
 

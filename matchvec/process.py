@@ -154,12 +154,14 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
     Returns:
         result: Predictions
     """
+    #cv2.imwrite('/app/img.jpg',img)
+
     result = detector.prediction(img)
     df = detector.create_df(result, img)
 
     # Filter by class
     df = df[(df['class_name'] == 'car') | (df['class_name'] == 'truck')]
-
+    #Image.fromarray(img).convert('RGB').save('/app/debug/classif_input.jpg')
     selected_boxes = list(
             zip(
                 [Image.fromarray(img)]*len(df),
