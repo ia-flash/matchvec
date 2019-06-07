@@ -7,7 +7,6 @@ services:
       args:
         - http_proxy=${http_proxy}
         - https_proxy=${http_proxy}
-    runtime: nvidia
     env_file:
       - docker/env.list
     environment:
