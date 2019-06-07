@@ -91,7 +91,6 @@ class ClassPrediction(Resource):
     def post(self):
         images = request.files.getlist('image')
         url = request.form.get('url', None)
-        device_type = request.form.get('device', None)
 
         res = list()
         if url:
