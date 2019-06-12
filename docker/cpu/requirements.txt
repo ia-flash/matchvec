@@ -7,3 +7,4 @@ requests==2.21.0
 Sphinx==2.0.1
 sphinx-autodoc-typehints==1.6.0
 flask-restplus==0.12.1
+sphinx_rtd_theme
