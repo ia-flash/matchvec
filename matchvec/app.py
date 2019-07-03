@@ -1,16 +1,60 @@
 import os
 import cv2
 import numpy as np
+import json
 from flask import Flask, send_from_directory, request, Blueprint, url_for
 from flask_restplus import Resource, Api, reqparse
 from process import predict_class, predict_objects
 from werkzeug.datastructures import FileStorage
 from urllib.request import urlopen
+from flask_jwt_extended import (
+    JWTManager, jwt_required, create_access_token,
+    get_jwt_identity
+)
+
 
 app = Flask(__name__)
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
 app.config.SWAGGER_UI_OPERATION_ID = True
 app.config.SWAGGER_UI_REQUEST_DURATION = True
+
+
+# Setup the Flask-JWT-Extended extension
+app.config['JWT_SECRET_KEY'] = 'super-secret'  # Change this!
+jwt = JWTManager(app)
+
+# Provide a method to create access tokens. The create_access_token()
+# function is used to actually generate the token, and you can return
+# it to the caller however you choose.
+@app.route('/api/login', methods=['POST'])
+def login():
+    #if not request.is_json:
+    #    return json.dumps({"msg": "Missing JSON in request"})
+
+    username = request.form.get('username', None)
+    password = request.form.get('password', None)
+    if not username:
+        return json.dumps({"msg": "Missing username parameter"})
+    if not password:
+        return json.dumps({"msg": "Missing password parameter"})
+
+    if username != 'test' or password != 'test':
+        return json.dumps({"msg": "Bad username or password"})
+
+    # Identity can be any data that is json serializable
+    access_token = create_access_token(identity=username)
+    return json.dumps(dict(access_token=access_token))
+
+
+# Protect a view with jwt_required, which requires a valid access token
+# in the request to access.
+@app.route('/api/protected', methods=['GET'])
+@jwt_required
+def protected():
+    # Access the identity of the current user with get_jwt_identity
+    current_user = get_jwt_identity()
+    print(current_user)
+    return json.dumps(dict(logged_in_as=current_user))
 
 
 ##########################
