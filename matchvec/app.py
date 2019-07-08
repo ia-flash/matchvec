@@ -7,54 +7,12 @@ from flask_restplus import Resource, Api, reqparse
 from process import predict_class, predict_objects
 from werkzeug.datastructures import FileStorage
 from urllib.request import urlopen
-from flask_jwt_extended import (
-    JWTManager, jwt_required, create_access_token,
-    get_jwt_identity
-)
-
+from functools import wraps
 
 app = Flask(__name__)
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
 app.config.SWAGGER_UI_OPERATION_ID = True
 app.config.SWAGGER_UI_REQUEST_DURATION = True
-
-
-# Setup the Flask-JWT-Extended extension
-app.config['JWT_SECRET_KEY'] = 'super-secret'  # Change this!
-jwt = JWTManager(app)
-
-# Provide a method to create access tokens. The create_access_token()
-# function is used to actually generate the token, and you can return
-# it to the caller however you choose.
-@app.route('/api/login', methods=['POST'])
-def login():
-    #if not request.is_json:
-    #    return json.dumps({"msg": "Missing JSON in request"})
-
-    username = request.form.get('username', None)
-    password = request.form.get('password', None)
-    if not username:
-        return json.dumps({"msg": "Missing username parameter"})
-    if not password:
-        return json.dumps({"msg": "Missing password parameter"})
-
-    if username != 'test' or password != 'test':
-        return json.dumps({"msg": "Bad username or password"})
-
-    # Identity can be any data that is json serializable
-    access_token = create_access_token(identity=username)
-    return json.dumps(dict(access_token=access_token))
-
-
-# Protect a view with jwt_required, which requires a valid access token
-# in the request to access.
-@app.route('/api/protected', methods=['GET'])
-@jwt_required
-def protected():
-    # Access the identity of the current user with get_jwt_identity
-    current_user = get_jwt_identity()
-    print(current_user)
-    return json.dumps(dict(logged_in_as=current_user))
 
 
 ##########################
@@ -78,6 +36,7 @@ app.register_blueprint(blueprint_doc)
 #  API SWAGGER  #
 #################
 
+
 class Custom_API(Api):
     @property
     def specs_url(self):
@@ -88,9 +47,19 @@ class Custom_API(Api):
         '''
         return url_for(self.endpoint('specs'), _external=False)
 
+
 blueprint = Blueprint('api', __name__, url_prefix='/api')
-api = Custom_API(blueprint, doc='/doc', version='1.0', title='IA Flash',
-          description='Classification marque et modèle')
+authorizations = {
+    'apikey': {
+        'type': 'apiKey',
+        'in': 'header',
+        'name': 'X-API-KEY'
+    }
+}
+api = Custom_API(
+        blueprint, doc='/doc', version='1.0', title='IA Flash',
+        description='Classification marque et modèle',
+        authorizations=authorizations)
 app.register_blueprint(blueprint)
 
 
@@ -98,12 +67,52 @@ parser = reqparse.RequestParser()
 parser.add_argument('url', type=str, location='form')
 parser.add_argument('image', type=FileStorage, location='files')
 
+parser_token = reqparse.RequestParser()
+parser_token.add_argument('token', type=list, location='json')
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+
+        token = None
+
+        if 'X-API-KEY' in request.headers:
+            token = request.headers['X-API-KEY']
+
+        if not token:
+            return {'message': 'Token is missing.'}, 401
+
+        if token != 'mytoken':
+            return {'message': 'Your token is wrong, wrong, wrong!!!'}, 401
+
+        print('TOKEN: {}'.format(token))
+        return f(*args, **kwargs)
+
+    return decorated
+
+
+@api.route('/login')
+class ObjectDetection(Resource):
+    """Docstring for MyClass. """
+
+    @api.expect(parser_token)
+    @api.doc(security=None)
+    def post(self):
+        args = request.get_json()
+        token = args.get('token', None)
+        print(token)
+        if token != 'mytoken':
+            return dict(message='token not valid'), 401
+        else:
+            return 200
 
 @api.route('/object_detection')
 class ObjectDetection(Resource):
     """Docstring for MyClass. """
 
     @api.expect(parser)
+    @api.doc(security='apikey')
+    @token_required
     def post(self):
         images = request.files.getlist('image', None)
         url = request.form.get('url', None)
@@ -132,6 +141,8 @@ class ClassPrediction(Resource):
     """Predict vehicule class"""
 
     @api.expect(parser)
+    @api.doc(security='apikey')
+    @token_required
     def post(self):
         images = request.files.getlist('image')
         url = request.form.get('url', None)
