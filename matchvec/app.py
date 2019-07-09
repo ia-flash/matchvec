@@ -19,7 +19,7 @@ app.config.SWAGGER_UI_REQUEST_DURATION = True
 
 blueprint_doc = Blueprint('documentation', __name__,
                           static_folder='../docs/build/html/_static',
-                          url_prefix='/docs')
+                          url_prefix='/matchvec/docs')
 
 
 @blueprint_doc.route('/', defaults={'filename': 'index.html'})
@@ -44,8 +44,8 @@ class Custom_API(Api):
         '''
         return url_for(self.endpoint('specs'), _external=False)
 
-blueprint = Blueprint('api', __name__, url_prefix='/api')
-api = Custom_API(blueprint, doc='/doc', version='1.0', title='IA Flash',
+blueprint = Blueprint('api', __name__, url_prefix='/matchvec')
+api = Custom_API(blueprint, doc='/swagger', version='1.0', title='IA Flash',
           description='Classification marque et modèle')
 app.register_blueprint(blueprint)
 
