@@ -24,7 +24,7 @@ services:
       - traefik.enable=true
       - traefik.backend=matchvec
       - traefik.port=5000
-      - traefik.frontend.rule=PathPrefix:/docs,/api,/swaggerui
+      - traefik.frontend.rule=PathPrefix:/matchvec,/swaggerui
 
 networks:
   isolated_nw:
