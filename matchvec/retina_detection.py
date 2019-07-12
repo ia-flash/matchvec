@@ -115,7 +115,7 @@ class Detector():
     """
     @timeit
     def __init__(self):
-        cfg = mmcv.Config.fromfile('/usr/src/configs/%s.py'%modele['conf'])
+        cfg = mmcv.Config.fromfile('/workspace/mmdetection/configs/%s.py'%modele['conf'])
         cfg.model.pretrained = None
 
         self.model = build_detector(cfg.model, test_cfg=cfg.test_cfg)
