@@ -57,21 +57,40 @@ parser.add_argument('url', type=str, location='form', help='Image URL in jpg for
 parser.add_argument('image', type=FileStorage, location='files', help='Image saved locally. Multiple images are allowed.')
 
 
-ObjectDetectionOutput = api.model('ObjectDetectionOutput', {
-    "x1": fields.Integer(description='X1', min=0, example=10),
-    "y1": fields.Integer(description='Y1', min=0, example=10),
-    "x2": fields.Integer(description='X2', min=0, example=200),
-    "y2": fields.Integer(description='Y2', min=0, example=200),
-    "class_name": fields.String(description='Matched model', example='car'),
-    "confidence": fields.Float(description='Detection confidence', min=0, max=1, example=0.95),
-    "label": fields.String(description='Label for visualization', example='car: 0.99'),
+BaseOutput = api.model('BaseOutput', {
+    'x1': fields.Integer(description='X1', min=0, example=10),
+    'y1': fields.Integer(description='Y1', min=0, example=10),
+    'x2': fields.Integer(description='X2', min=0, example=200),
+    'y2': fields.Integer(description='Y2', min=0, example=200),
+    'class_name': fields.String(description='Object detection label',
+                                example='car'),
+    'confidence': fields.Float(description='Object detection confidence score',
+                               min=0, max=1, example=0.95),
     })
 
 
-ClassificationOutput = api.inherit('ClassificationOutput', ObjectDetectionOutput, {
-    'pred': fields.List(fields.String(description='oiuioi', example=[0.5462563633918762, 0.07783588021993637, 0.047950416803359985, 0.041797831654548645, 0.03768396005034447])),
-    'prob': fields.List(fields.Float(description='iii', example=["PEUGEOT 207", "CITROEN C3 PICASSO", "NISSAN MICRA", "CITROEN XSARA PICASSO", "RENAULT KANGOO"]))
-})
+ObjectDetectionOutput = api.inherit('ObjectDetectionOutput', BaseOutput, {
+            'label': fields.String(
+                description='Object detection label for visualization',
+                example='car: 0.95'),
+            })
+
+
+ClassificationOutput = api.inherit('ClassificationOutput', BaseOutput, {
+            'label': fields.String(
+                description='Classification label for visualization',
+                example='PEUGEOT 207: 0.54'),
+            'pred': fields.String(
+                description='5 first predictions classes',
+                example=['PEUGEOT 207', 'CITROEN C3 PICASSO', 'NISSAN MICRA',
+                         'CITROEN XSARA PICASSO', 'RENAULT KANGOO']
+                ),
+            'prob': fields.Float(
+                description='5 first prediction probabilities',
+                example=[0.5462563633918762, 0.07783588021993637,
+                         0.047950416803359985, 0.041797831654548645,
+                         0.03768396005034447])
+                })
 
 
 @api.route('/object_detection')
@@ -79,7 +98,7 @@ class ObjectDetection(Resource):
     """Docstring for MyClass. """
 
     @api.expect(parser)
-    @api.marshal_with(ObjectDetectionOutput, mask=None)
+    @api.marshal_with([[ObjectDetectionOutput]], mask=None)
     def post(self):
         """Object detection
 
@@ -113,7 +132,7 @@ class ClassPrediction(Resource):
     """Predict vehicule class"""
 
     @api.expect(parser)
-    @api.marshal_with(ClassificationOutput, mask=None)
+    @api.marshal_with([[ClassificationOutput]], mask=None)
     def post(self):
         """Brand and model classifcation
 
