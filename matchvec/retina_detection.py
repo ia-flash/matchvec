@@ -7,11 +7,11 @@ import pandas as pd
 import torch
 import mmcv
 from mmdet.models import build_detector
-from mmdet.apis import inference_detector
+from mmdet.apis import inference_detector, init_detector
 from mmdet.core import get_classes
 
 from typing import List
-from utils import timeit
+from utils import timeit, logger
 
 DETECTION_MODEL = 'retina'
 DETECTION_THRESHOLD = 0.4
@@ -115,12 +115,9 @@ class Detector():
     """
     @timeit
     def __init__(self):
-        cfg = mmcv.Config.fromfile('/workspace/mmdetection/configs/%s.py'%modele['conf'])
-        cfg.model.pretrained = None
-
-        self.model = build_detector(cfg.model, test_cfg=cfg.test_cfg)
-        _ = mmcv.runner.load_checkpoint(self.model, os.path.join('/model',DETECTION_MODEL ,'%s.pth'%modele['checkpoint']))
-        self.cfg = cfg
+        config_file = f"/workspace/mmdetection/configs/{modele['conf']}.py"
+        checkpoint_file = os.path.join('/model', DETECTION_MODEL, f"{modele['checkpoint']}.pth")
+        self.model = init_detector(config_file, checkpoint_file)
 
 
 
@@ -136,7 +133,8 @@ class Detector():
             result: Yolo boxes from object detections
         """
         image = cv2.cvtColor(image , cv2.COLOR_RGB2BGR)
-        result = inference_detector(self.model, image, self.cfg)
+        result = inference_detector(self.model, image)
+
         return result
 
     def batch_prediction(self, image: List[np.ndarray]) -> List[List[np.ndarray]]:
