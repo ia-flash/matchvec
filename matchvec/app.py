@@ -80,16 +80,15 @@ ClassificationOutput = api.inherit('ClassificationOutput', BaseOutput, {
             'label': fields.String(
                 description='Classification label for visualization',
                 example='PEUGEOT 207: 0.54'),
-            'pred': fields.String(
+            'pred': fields.List(fields.String(),
                 description='5 first predictions classes',
                 example=['PEUGEOT 207', 'CITROEN C3 PICASSO', 'NISSAN MICRA',
                          'CITROEN XSARA PICASSO', 'RENAULT KANGOO']
                 ),
-            'prob': fields.Float(
+            'prob': fields.List(fields.Float(),
                 description='5 first prediction probabilities',
-                example=[0.5462563633918762, 0.07783588021993637,
-                         0.047950416803359985, 0.041797831654548645,
-                         0.03768396005034447])
+                example=[0.5462563633918762, 0.07783588021993637, 0.047950416803359985,
+                    0.041797831654548645, 0.03768396005034447])
                 })
 
 
@@ -98,7 +97,7 @@ class ObjectDetection(Resource):
     """Docstring for MyClass. """
 
     @api.expect(parser)
-    @api.marshal_with([[ObjectDetectionOutput]], mask=None)
+    @api.marshal_with(ObjectDetectionOutput, mask=None, as_list=True, description='Result is a list of the following element (double list)')
     def post(self):
         """Object detection
 
@@ -132,7 +131,7 @@ class ClassPrediction(Resource):
     """Predict vehicule class"""
 
     @api.expect(parser)
-    @api.marshal_with([[ClassificationOutput]], mask=None)
+    @api.marshal_with(ClassificationOutput, mask=None, as_list=True, description='Result is a list of the following element (double list)')
     def post(self):
         """Brand and model classifcation
 
