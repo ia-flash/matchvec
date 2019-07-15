@@ -14,7 +14,7 @@ from typing import List
 from utils import timeit, logger
 
 DETECTION_MODEL = os.getenv('DETECTION_MODEL')
-DETECTION_THRESHOLD = os.getenv('DETECTION_THRESHOLD')
+DETECTION_THRESHOLD = float(os.getenv('DETECTION_THRESHOLD'))
 logger.debug(DETECTION_MODEL)
 logger.debug(DETECTION_THRESHOLD)
 
