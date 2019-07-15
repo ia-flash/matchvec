@@ -7,23 +7,23 @@ import pandas as pd
 import torch
 import mmcv
 from mmdet.models import build_detector
-from mmdet.apis import inference_detector
+from mmdet.apis import inference_detector, init_detector
 from mmdet.core import get_classes
 
 from typing import List
-from utils import timeit
+from utils import timeit, logger
 
-DETECTION_MODEL = 'retina'
-DETECTION_THRESHOLD = 0.4
+DETECTION_MODEL = os.getenv('DETECTION_MODEL')
+DETECTION_THRESHOLD = os.getenv('DETECTION_THRESHOLD')
+logger.debug(DETECTION_MODEL)
+logger.debug(DETECTION_THRESHOLD)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(device)
+logger.debug(device)
 
-#modele = dict(conf="retinanet_r50_fpn_1x",
-#              checkpoint="retinanet_r50_fpn_1x_20181125-3d3c2142")
-# wget href="https://s3.ap-northeast-2.amazonaws.com/open-mmlab/mmdetection/models/retinanet_x101_64x4d_fpn_1x_20181218-2f6f778b.pth
-modele = dict(conf="retinanet_x101_64x4d_fpn_1x",
-          checkpoint="retinanet_x101_64x4d_fpn_1x_20181218-2f6f778b")
+# Model checkpoint at https://github.com/open-mmlab/mmdetection/blob/master/MODEL_ZOO.md
+modele = dict(conf="cascade_rcnn_x101_64x4d_fpn_1x",
+           checkpoint="cascade_rcnn_x101_64x4d_fpn_1x_20181218-e2dc376a")
 
 class_to_keep = ['person','bicycle', 'car',
                 'motorcycle','bus',
@@ -115,14 +115,13 @@ class Detector():
     """
     @timeit
     def __init__(self):
-        cfg = mmcv.Config.fromfile('/usr/src/configs/%s.py'%modele['conf'])
-        cfg.model.pretrained = None
+        config_file = os.path.join('/model', DETECTION_MODEL, f"{modele['conf']}.py")
+        checkpoint_file = os.path.join('/model', DETECTION_MODEL, f"{modele['checkpoint']}.pth")
+        self.model = init_detector(config_file, checkpoint_file)
 
-        self.model = build_detector(cfg.model, test_cfg=cfg.test_cfg)
-        _ = mmcv.runner.load_checkpoint(self.model, os.path.join('/model',DETECTION_MODEL ,'%s.pth'%modele['checkpoint']))
-        self.cfg = cfg
-
-
+        #self.model.eval()
+        #torch.cuda.set_device(0)
+        #self.model.cuda(0)
 
     def prediction(self, image: np.ndarray) -> List[np.ndarray]:
         """ Inference
@@ -136,7 +135,8 @@ class Detector():
             result: Yolo boxes from object detections
         """
         image = cv2.cvtColor(image , cv2.COLOR_RGB2BGR)
-        result = inference_detector(self.model, image, self.cfg)
+        result = inference_detector(self.model, image)
+
         return result
 
     def batch_prediction(self, image: List[np.ndarray]) -> List[List[np.ndarray]]:
