@@ -8,7 +8,7 @@ from typing import List
 from utils import timeit
 
 DETECTION_MODEL = 'yolo'
-DETECTION_THRESHOLD = 0.4
+DETECTION_THRESHOLD = os.getenv('DETECTION_THRESHOLD')
 NMS_THRESHOLD = 0.4  # Non Maximum Supression threshold
 SWAPRB = False
 SCALE = 0.00392  # 1/255

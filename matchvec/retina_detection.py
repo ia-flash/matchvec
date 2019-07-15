@@ -13,17 +13,17 @@ from mmdet.core import get_classes
 from typing import List
 from utils import timeit, logger
 
-DETECTION_MODEL = 'retina'
-DETECTION_THRESHOLD = 0.4
+DETECTION_MODEL = os.getenv('DETECTION_MODEL')
+DETECTION_THRESHOLD = os.getenv('DETECTION_THRESHOLD')
+logger.debug(DETECTION_MODEL)
+logger.debug(DETECTION_THRESHOLD)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 logger.debug(device)
 
-#modele = dict(conf="retinanet_r50_fpn_1x",
-#              checkpoint="retinanet_r50_fpn_1x_20181125-3d3c2142")
-# wget href="https://s3.ap-northeast-2.amazonaws.com/open-mmlab/mmdetection/models/retinanet_x101_64x4d_fpn_1x_20181218-2f6f778b.pth
-modele = dict(conf="retinanet_x101_64x4d_fpn_1x",
-           checkpoint="retinanet_x101_64x4d_fpn_1x_20181218-a0a22662")
+# Model checkpoint at https://github.com/open-mmlab/mmdetection/blob/master/MODEL_ZOO.md
+modele = dict(conf="cascade_rcnn_x101_64x4d_fpn_1x",
+           checkpoint="cascade_rcnn_x101_64x4d_fpn_1x_20181218-e2dc376a")
 
 class_to_keep = ['person','bicycle', 'car',
                 'motorcycle','bus',
