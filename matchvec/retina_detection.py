@@ -17,13 +17,13 @@ DETECTION_MODEL = 'retina'
 DETECTION_THRESHOLD = 0.4
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(device)
+logger.debug(device)
 
 #modele = dict(conf="retinanet_r50_fpn_1x",
 #              checkpoint="retinanet_r50_fpn_1x_20181125-3d3c2142")
 # wget href="https://s3.ap-northeast-2.amazonaws.com/open-mmlab/mmdetection/models/retinanet_x101_64x4d_fpn_1x_20181218-2f6f778b.pth
 modele = dict(conf="retinanet_x101_64x4d_fpn_1x",
-          checkpoint="retinanet_x101_64x4d_fpn_1x_20181218-2f6f778b")
+           checkpoint="retinanet_x101_64x4d_fpn_1x_20181218-a0a22662")
 
 class_to_keep = ['person','bicycle', 'car',
                 'motorcycle','bus',
@@ -115,11 +115,13 @@ class Detector():
     """
     @timeit
     def __init__(self):
-        config_file = f"/workspace/mmdetection/configs/{modele['conf']}.py"
+        config_file = os.path.join('/model', DETECTION_MODEL, f"{modele['conf']}.py")
         checkpoint_file = os.path.join('/model', DETECTION_MODEL, f"{modele['checkpoint']}.pth")
         self.model = init_detector(config_file, checkpoint_file)
 
-
+        #self.model.eval()
+        #torch.cuda.set_device(0)
+        #self.model.cuda(0)
 
     def prediction(self, image: np.ndarray) -> List[np.ndarray]:
         """ Inference
