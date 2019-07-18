@@ -8,7 +8,7 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 from collections import OrderedDict
 from typing import List, Tuple, Dict
-from utils import timeit
+from utils import timeit, logger
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
@@ -95,6 +95,18 @@ class Classifier(object):
             self.classification_model.cuda(device)
 
         self.classification_model.eval()
+
+    def export_model(self):
+        """ Export model"""
+        # Input to the model
+        batch_size = 1
+        x = torch.randn(batch_size, 3, 224, 224, requires_grad=True)
+        # Export the model
+        torch_out = torch.onnx._export(self.classification_model,             # model being run
+                                       x,                       # model input (or a tuple for multiple inputs)
+                                       "classifcation_model.onnx", # where to save the model (can be a file or file-like object)
+                                       export_params=True)      # store the trained parameter weights inside the model file
+
 
     def prediction(self, selected_boxes: Tuple[np.ndarray, List[float]]):
         """Inference in image

@@ -5,13 +5,14 @@ import unittest
 sys.path.append('./matchvec')
 from app import app
 from process import predict_class, predict_objects
+from classification import Classifier
 
 class TestFileFail(unittest.TestCase):
     def test_apidoc(self):
         with app.test_client() as c:
             print("Testing doc")
-            response = c.get('/api/doc')
-            self.assertEqual('200 OK', response.status)
+            response = c.get('/matchvec/docs')
+            self.assertEqual('308 PERMANENT REDIRECT', response.status)
 
     def test_class(self):
         img = cv2.imread('tests/clio-peugeot.jpg') # BGR
@@ -29,6 +30,11 @@ class TestFileFail(unittest.TestCase):
         print('Testing image', img.shape)
         res = predict_objects(img)
         self.assertIsInstance(res, list)
+
+
+    def test_export_classification_model(self):
+        classifier = Classifier()
+        classifier.export_model()
 
 
     #def test_request_prediction(self):
