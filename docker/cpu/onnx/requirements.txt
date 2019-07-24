@@ -2,11 +2,10 @@ Flask==1.0.2
 numpy==1.16.2
 pandas==0.24.2
 opencv-python-headless==4.0.0.21
-torchvision==0.2.2.post3
 requests==2.21.0
 Sphinx==2.0.1
 sphinx-autodoc-typehints==1.6.0
 flask-restplus==0.12.1
-sphinx_rtd_theme
-onnx
-onnxruntime
+sphinx-rtd-theme==0.4.3
+onnx==1.5.0
+onnxruntime==0.4.0
