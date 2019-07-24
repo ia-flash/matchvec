@@ -10,10 +10,11 @@ from itertools import combinations, product
 from typing import List, Union
 from utils import timeit
 
-from classification import Classifier
+from classification import Classifier, Classifier_onnx
 Detector = import_module(os.getenv('DETECTION_MODEL') + '_detection').Detector
 detector = Detector()
 classifier = Classifier()
+classifier_onnx = Classifier_onnx()
 
 level = logging.DEBUG
 logging.basicConfig(
@@ -172,6 +173,10 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
     # Selected box
     if len(selected_boxes) > 0:
         pred, prob = classifier.prediction(selected_boxes)
+        #pred, prob = classifier_onnx.prediction(selected_boxes)
+        logger.debug('OUTT')
+        logger.debug(pred)
+        logger.debug(prob)
         df = df.assign(
                 pred=pred,
                 prob=prob,
