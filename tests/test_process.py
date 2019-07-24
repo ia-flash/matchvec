@@ -1,11 +1,12 @@
-import sys
+import sys, os
 import cv2
 import unittest
 
 sys.path.append('./matchvec')
 from app import app
 from process import predict_class, predict_objects
-from classification import Classifier
+from importlib import import_module
+Classifier = import_module('classification_' + os.getenv('BACKEND')).Classifier
 
 class TestFileFail(unittest.TestCase):
 
