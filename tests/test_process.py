@@ -8,6 +8,7 @@ from process import predict_class, predict_objects
 from classification import Classifier
 
 class TestFileFail(unittest.TestCase):
+
     def test_apidoc(self):
         with app.test_client() as c:
             print("Testing doc")
@@ -15,7 +16,7 @@ class TestFileFail(unittest.TestCase):
             self.assertEqual('308 PERMANENT REDIRECT', response.status)
 
     def test_class(self):
-        img = cv2.imread('tests/clio-peugeot.jpg') # BGR
+        img = cv2.imread('tests/clio4.jpg') # BGR
         img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
 
         print('Testing image', img.shape)
@@ -25,7 +26,7 @@ class TestFileFail(unittest.TestCase):
         assert any(['CLIO' in vehicule['label'] for vehicule in res]), 'There is no clio in first predictions'
 
     def test_object(self):
-        img = cv2.imread('tests/clio-peugeot.jpg')
+        img = cv2.imread('tests/clio4.jpg')
         img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
         print('Testing image', img.shape)
         res = predict_objects(img)
@@ -54,4 +55,6 @@ class TestFileFail(unittest.TestCase):
     #            )
 
 if __name__ == '__main__':
-    unittest.main()
+    #unittest.main()
+    tf = TestFileFail()
+    tf.test_class()

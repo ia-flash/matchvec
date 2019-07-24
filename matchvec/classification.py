@@ -39,8 +39,8 @@ for k, v in state_dict.items():
 
 def softmax(x):
     """Compute softmax values for each sets of scores in x."""
-    e_x = np.exp(x - np.max(x))
-    return e_x / e_x.sum()
+    e_x = np.exp(x - np.expand_dims(np.max(x, axis=1),axis=1))
+    return  e_x / np.expand_dims(e_x.sum(axis=1),axis=1)
 
 
 def detect_faces(image, ind):
@@ -183,6 +183,7 @@ class Classifier(object):
         Returns:
             (final_pred, final_prob): The result is two lists with the top 5 class prediction and the probabilities
         """
+
         # Crop and resize
         crop = Crop()
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -205,9 +206,9 @@ class Classifier(object):
                 inp = inp.cuda(device, non_blocking=True)
 
             #logger.debug(inp.shape)
+
             output = self.classification_model(inp)
             logger.debug(inp.data.numpy()[0])
-            #logger.debug(inp.data.numpy().shape)
             #res = self.session.run([self.output_name], {self.input_name: inp.data.numpy()})
             #logger.debug('torch')
             #logger.debug(output.shape)
@@ -222,8 +223,6 @@ class Classifier(object):
 
             softmax = nn.Softmax(dim=1)
             norm_output = softmax(output)
-            logger.debug('norm output')
-            logger.debug(norm_output.shape)
 
             probs, preds = norm_output.topk(5, 1, True, True)
             pred = preds.data.cpu().tolist()
@@ -248,7 +247,7 @@ class Classifier_onnx(object):
 
     @timeit
     def __init__(self):
-        self.session = onnxruntime.InferenceSession("classifcation_model.onnx")
+        self.session = onnxruntime.InferenceSession(os.path.join('/model', CLASSIFICATION_MODEL,"classifcation_model.onnx"))
         self.output_name = self.session.get_outputs()[0].name
         self.input_name = self.session.get_inputs()[0].name
 
@@ -274,7 +273,7 @@ class Classifier_onnx(object):
             logger.debug(img.size)
             logger.debug('MIDE')
             logger.debug(img.mode)
-            detect_faces(np.array(img.crop(boxes)), ind)
+            #detect_faces(np.array(img.crop(boxes)), ind)
             ind += 1
             #img = np.array(img.crop(boxes).resize((224, 224), Image.BILINEAR)).reshape(3, 224, 224).astype(np.float32)
             img = np.moveaxis(np.array(img.crop(boxes).resize((224, 224),
@@ -286,27 +285,44 @@ class Classifier_onnx(object):
             img -= np.array([0.485, 0.456, 0.406])[:, None, None]
             img /= np.array([0.229, 0.224, 0.225])[:, None, None]
             logger.debug(img.shape)
+            logger.debug(type(img))
+
             logger.debug('box')
             logger.debug(boxes)
             X.append(img)
 
-        #logger.debug(X)
-        #logger.debug(np.array(X))
-        logger.debug(len(X))
-        logger.debug(np.array(X).shape)
-        logger.debug(np.array(X).dtype)
-        logger.debug(type(np.array(X)))
-        logger.debug(np.array(X)[0])
+            #logger.debug(X)
+            #logger.debug(np.array(X))
+            """
+            logger.debug(len(X))
+            logger.debug(np.array(X).shape)
+            logger.debug(np.array(X).dtype)
+            logger.debug(type(np.array(X)))
+            logger.debug(np.array(X)[0])
+            """
+        logger.debug("The model expects input shape: %s"% self.session.get_inputs()[0].shape)
+        logger.debug("The shape of the Image is: {}".format(img.shape))
+
         res = self.session.run([self.output_name], {self.input_name: np.array(X)})
+        #res = self.session.run([self.output_name], {self.input_name: np.expand_dims(img,axis=0)})
+
         logger.debug('res.shape')
         logger.debug(len(res))
+        logger.debug(res[0].shape)
+
+        logger.debug(type(res[0]))
         norm_output = softmax(res[0])
+        #e_x = np.exp(res[0] - np.expand_dims(np.max(res[0], axis=1),axis=1))
+        #norm_output =  e_x / np.expand_dims(e_x.sum(axis=1),axis=1)
+        logger.debug(norm_output)
+
         pred = np.argmax(norm_output, axis=1)
         prob = np.max(norm_output, axis=1)
 
         final_pred = list([[all_categories[str(i)]] for i in pred])
         final_prob = list([[i] for i in prob])
-
+        print(final_pred)
+        print(final_prob)
         ## Crop and resize
         #crop = Crop()
         #normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],

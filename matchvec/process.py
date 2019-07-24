@@ -19,7 +19,7 @@ classifier_onnx = Classifier_onnx()
 level = logging.DEBUG
 logging.basicConfig(
         level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format='%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
         )
 logger = logging.getLogger(__name__)
@@ -172,9 +172,10 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
 
     # Selected box
     if len(selected_boxes) > 0:
-        pred, prob = classifier.prediction(selected_boxes)
-        #pred, prob = classifier_onnx.prediction(selected_boxes)
-        logger.debug('OUTT')
+        #pred, prob = classifier.prediction(selected_boxes)
+
+        pred, prob = classifier_onnx.prediction(selected_boxes)
+        logger.debug('OUT')
         logger.debug(pred)
         logger.debug(prob)
         df = df.assign(
