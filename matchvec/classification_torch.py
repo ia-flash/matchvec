@@ -1,4 +1,5 @@
-"""Classification Marque Modèle"""
+import cv2
+import io
 import os
 import json
 import numpy as np
@@ -8,7 +9,8 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 from collections import OrderedDict
 from typing import List, Tuple, Dict
-from utils import timeit
+from utils import timeit, logger
+from PIL import Image
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
@@ -96,6 +98,7 @@ class Classifier(object):
 
         self.classification_model.eval()
 
+
     def prediction(self, selected_boxes: Tuple[np.ndarray, List[float]]):
         """Inference in image
 
@@ -109,6 +112,7 @@ class Classifier(object):
         Returns:
             (final_pred, final_prob): The result is two lists with the top 5 class prediction and the probabilities
         """
+
         # Crop and resize
         crop = Crop()
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -130,7 +134,10 @@ class Classifier(object):
             if device.type == 'cuda' :
                 inp = inp.cuda(device, non_blocking=True)
 
+            #logger.debug(inp.shape)
+
             output = self.classification_model(inp)
+            logger.debug(inp.data.numpy()[0])
 
             softmax = nn.Softmax(dim=1)
             norm_output = softmax(output)
@@ -142,6 +149,59 @@ class Classifier(object):
                     for i in range(len(pred))
                     ]
             prob = probs.data.cpu().tolist()
+            #logger.debug('torch pred')
+            #logger.debug(pred)
+            #logger.debug(prob)
             final_pred.extend(pred_class)
             final_prob.extend(prob)
         return final_pred, final_prob
+
+def detect_faces(image, ind):
+    import sdfsf
+    THRESHOLD = 0.2
+
+    # load our serialized model from disk
+    print("[INFO] loading model...")
+    net = cv2.dnn.readNetFromCaffe(
+            '/model/face_detection/deploy.prototxt.txt',
+            '/model/face_detection/res10_300x300_ssd_iter_140000.caffemodel')
+
+    # load the input image and construct an input blob for the image
+    # by resizing to a fixed 300x300 pixels and then normalizing it
+    #image = cv2.imread('/app/radars/00202_20180118_223914_00030_1.jpg')
+    #image = cv2.imread('/app' + '/radars/00202_20180118_223914_00030_1.jpg')
+    (h, w) = image.shape[:2]
+    blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
+
+    # pass the blob through the network and obtain the detections and
+    # predictions
+    print("[INFO] computing object detections...")
+    net.setInput(blob)
+    detections = net.forward()
+    count = 0
+
+    # loop over the detections
+    for i in range(0, detections.shape[2]):
+        # extract the confidence (i.e., probability) associated with the
+            # prediction
+            confidence = detections[0, 0, i, 2]
+
+            # filter out weak detections by ensuring the `confidence` is
+            # greater than the minimum confidence
+            if confidence > THRESHOLD:
+                count += 1
+                # compute the (x, y)-coordinates of the bounding box for the
+                # object
+                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+                (startX, startY, endX, endY) = box.astype("int")
+
+                # draw the bounding box of the face along with the associated
+                # probability
+                text = "{:.2f}%".format(confidence * 100) + 'Count ' + str(count)
+                y = startY - 10 if startY - 10 > 10 else startY + 10
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+                cv2.putText(image, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
+
+    cv2.imwrite('image{}.jpg'.format(ind), image)
+
+    logger.debug('Count: {}'.format(count))
