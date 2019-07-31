@@ -5,16 +5,9 @@ import cv2
 import onnxruntime
 from PIL import Image
 import base64
-#from process import predict_class, predict_objects
+from process import predict_class, predict_objects
 
 #if path.isfile('/tmp/classification_model.onnx') != True and False:
-if path.isfile('/tmp/classification_model.onnx') != True:
-    import boto3
-    print("Downloading..")
-    s3 = boto3.resource('s3')
-    myobject = s3.Object('iaflash', 'classifcation_model.onnx')
-    myobject.download_file('/tmp/classifcation_model.onnx')
-    print("Downloading ok")
 
 def lambda_handler(event, context):
     print("ENV", getenv('BACKEND'))

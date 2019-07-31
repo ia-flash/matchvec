@@ -14,6 +14,8 @@ Globals:
         BACKEND: onnx
         DETECTION_THRESHOLD: 0.4
         BASE_MODEL_PATH: /tmp
+        DETECTION_MODEL: ssd
+        CLASSIFICATION_MODEL: resnet18-102
 Resources:
   HelloWorldFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction

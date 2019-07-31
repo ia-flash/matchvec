@@ -9,15 +9,11 @@ from typing import List, Tuple, Dict
 from utils import timeit, logger
 import onnxruntime
 from PIL import Image
-
+from BaseModel import BaseModel
 
 CLASSIFICATION_MODEL = os.getenv('CLASSIFICATION_MODEL')
 
 # Get label
-filename = os.path.join('/model', CLASSIFICATION_MODEL,  'idx_to_class.json')
-with open(filename) as json_data:
-    all_categories = json.load(json_data)
-    CLASS_NUMBER = len(all_categories)
 
 def softmax(x):
     """Compute softmax values for each sets of scores in x."""
@@ -26,7 +22,7 @@ def softmax(x):
 
 
 
-class Classifier(object):
+class Classifier(BaseModel):
     """Classifier for marque et modèle
 
     Classifies images using a pretrained model.
@@ -34,9 +30,21 @@ class Classifier(object):
 
     @timeit
     def __init__(self):
-        self.session = onnxruntime.InferenceSession(os.path.join('/model', CLASSIFICATION_MODEL,"classifcation_model.onnx"))
+        self.files = [ 'classifcation_model', 'idx_to_class.json']
+        dst_path = os.path.join(
+            os.environ['BASE_MODEL_PATH'], CLASSIFICATION_MODEL)
+        src_path = os.path.join('model', CLASSIFICATION_MODEL)
+
+        self.download_model_folder(dst_path, src_path)
+
+        self.session = onnxruntime.InferenceSession(dst_path,"classifcation_model.onnx"))
         self.output_name = self.session.get_outputs()[0].name
         self.input_name = self.session.get_inputs()[0].name
+
+        filename = os.path.join(dst_path,  'idx_to_class.json')
+        with open(filename) as json_data:
+            self.all_categories = json.load(json_data)
+            self.class_number = len(self.all_categories)
 
 
     def prediction(self, selected_boxes: Tuple[np.ndarray, List[float]]):
@@ -89,7 +97,7 @@ class Classifier(object):
         pred = np.argmax(norm_output, axis=1)
         prob = np.max(norm_output, axis=1)
 
-        final_pred = list([[all_categories[str(i)]] for i in pred])
+        final_pred = list([[self.all_categories[str(i)]] for i in pred])
         final_prob = list([[float(i)] for i in prob])
 
         return final_pred, final_prob
