@@ -53,7 +53,7 @@ class Detector(BaseModel):
                     crop=False)
                 )
         cvOut = self.model.forward()
-        result = cvOBaseModelut[0, 0, :, :]
+        result = cvOut[0, 0, :, :]
         return result
 
     def create_df(self, result: np.ndarray, image: np.ndarray) -> pd.DataFrame:
