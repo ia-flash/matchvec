@@ -30,14 +30,14 @@ class Classifier(BaseModel):
 
     @timeit
     def __init__(self):
-        self.files = [ 'classifcation_model', 'idx_to_class.json']
+        self.files = ['classifcation_model.onnx', 'idx_to_class.json']
         dst_path = os.path.join(
             os.environ['BASE_MODEL_PATH'], CLASSIFICATION_MODEL)
         src_path = os.path.join('model', CLASSIFICATION_MODEL)
 
         self.download_model_folder(dst_path, src_path)
 
-        self.session = onnxruntime.InferenceSession(dst_path,"classifcation_model.onnx"))
+        self.session = onnxruntime.InferenceSession(os.path.join(dst_path, "classifcation_model.onnx"))
         self.output_name = self.session.get_outputs()[0].name
         self.input_name = self.session.get_inputs()[0].name
 
