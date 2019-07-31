@@ -38,6 +38,24 @@ class TestFileFail(unittest.TestCase):
         classifier = Classifier()
         classifier.export_model()
 
+    # TODO: add assert
+    def test_app(self):
+        url = 'http://matchvec:5000/api/object_detection'
+        # url = 'http://matchvec:5000/api/predict'
+        files = {'image': open('clio-punto-megane.jpg', 'rb')}
+        res = requests.post(url, files=files)
+        logger.debug(res.text)
+
+    # TODO: add assert
+    def test_app_multiple(self):
+        url = 'http://matchvec:5000/api/object_detection'
+        files = [
+                ('image', open('clio-peugeot.jpg', 'rb')),
+                ('image', open('cliomegane.jpg', 'rb'))
+                ]
+        res = requests.post(url, files=files)
+        logger.debug(res.text)
+
 
     #def test_request_prediction(self):
     #    with app.test_client() as c:

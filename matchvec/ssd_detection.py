@@ -5,17 +5,18 @@ import json
 import numpy as np
 import pandas as pd
 from matchvec.utils import timeit
+from BaseModel import BaseModel
 
 # DETECTION_MODEL = 'faster_rcnn_resnet101_coco_2018_01_28/'
 DETECTION_MODEL = 'ssd_mobilenet_v2_coco_2018_03_29/'
 DETECTION_THRESHOLD = float(os.getenv('DETECTION_THRESHOLD'))
 SWAPRB = False
 
-with open(os.path.join('/model', DETECTION_MODEL, 'labels.json')) as json_data:
+with open(os.path.join(os.environ['BASE_MODEL_PATH'], DETECTION_MODEL, 'labels.json')) as json_data:
     CLASS_NAMES = json.load(json_data)
 
 
-class Detector():
+class Detector(BaseModel):
     """SSD Mobilenet object detection
 
     DETECTION_MODEL: Detection model to use
@@ -25,11 +26,16 @@ class Detector():
 
     @timeit
     def __init__(self):
+        self.files = [ 'frozen_inference_graph.pb', 'config.pbtxt', 'labels.json']
+        dst_path = os.path.join(
+            os.environ['BASE_MODEL_PATH'], DETECTION_MODEL)
+        src_path = DETECTION_MODEL
+
+        self.download_model_folder(dst_path, src_path)
+
         self.model = cv2.dnn.readNetFromTensorflow(
-                os.path.join(
-                    '/model', DETECTION_MODEL, 'frozen_inference_graph.pb'),
-                os.path.join(
-                    '/model', DETECTION_MODEL, 'config.pbtxt')
+                os.path.join(dst_path, 'frozen_inference_graph.pb'),
+                os.path.join(dst_path, 'config.pbtxt')
         )
 
     def prediction(self, image: np.ndarray) -> np.ndarray:
@@ -47,7 +53,7 @@ class Detector():
                     crop=False)
                 )
         cvOut = self.model.forward()
-        result = cvOut[0, 0, :, :]
+        result = cvOBaseModelut[0, 0, :, :]
         return result
 
     def create_df(self, result: np.ndarray, image: np.ndarray) -> pd.DataFrame:
