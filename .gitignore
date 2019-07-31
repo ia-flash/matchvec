@@ -6,3 +6,4 @@ dist
 model
 docs/build
 .aws-sam
+packaged.yaml
