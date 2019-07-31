@@ -78,6 +78,6 @@ class Classifier(object):
         prob = np.max(norm_output, axis=1)
 
         final_pred = list([[all_categories[str(i)]] for i in pred])
-        final_prob = list([[i] for i in prob])
+        final_prob = list([[float(i)] for i in prob])
 
         return final_pred, final_prob

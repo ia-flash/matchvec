@@ -73,7 +73,8 @@ docs: docs/html
 	echo "Post"
 
 test:
-	$(COMPOSE) exec matchvec python tests/test_process.py
+	#$(COMPOSE) exec matchvec python tests/test_process.py
+	$(COMPOSE) exec matchvec python tests/test_lambda_function.py
 
 layers:
 	mkdir -p layers/pandas/python
