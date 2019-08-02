@@ -1,5 +1,0 @@
-pandas
-onnxruntime
-opencv-python-headless
-Pillow
-requests

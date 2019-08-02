@@ -91,3 +91,12 @@ layer: layers
 	cd layers/opencv; zip -r opencv.zip python; cd ../..;
 	cd layers/onnx; zip -r onnx.zip python; cd ../..;
 	cd layers/pillow; zip -r pillow.zip python; cd ../..;
+
+sam_build:
+	sam build
+
+sam_package:
+	sam package --template-file template.yaml --s3-bucket iaflash --output-template-file packaged.yaml
+
+sam_deploy:
+	aws cloudformation deploy --template-file packaged.yaml --stack-name aws-iaflash
