@@ -1,7 +1,6 @@
 import os
 import cv2
 import logging
-import requests
 import numpy as np
 import pandas as pd
 from PIL import Image
@@ -107,24 +106,6 @@ def filter_by_iou(df: pd.DataFrame) -> pd.DataFrame:
     # drop trucks overlapping car
     df = df.drop(id_to_drop)
     return df
-
-
-def test_app():
-    url = 'http://matchvec:5000/api/object_detection'
-    # url = 'http://matchvec:5000/api/predict'
-    files = {'image': open('clio-punto-megane.jpg', 'rb')}
-    res = requests.post(url, files=files)
-    logger.debug(res.text)
-
-
-def test_app_multiple():
-    url = 'http://matchvec:5000/api/object_detection'
-    files = [
-            ('image', open('clio-peugeot.jpg', 'rb')),
-            ('image', open('cliomegane.jpg', 'rb'))
-            ]
-    res = requests.post(url, files=files)
-    logger.debug(res.text)
 
 
 @timeit
