@@ -6,7 +6,7 @@ import json
 import numpy as np
 from collections import OrderedDict
 from typing import List, Tuple, Dict
-from utils import timeit, logger
+from matchvec.utils import timeit, logger
 import onnxruntime
 from PIL import Image
 
@@ -56,10 +56,6 @@ class Classifier(object):
         X = list()
         ind = 0
         for img, boxes in selected_boxes:
-            logger.debug('img')
-            logger.debug(img.size)
-            logger.debug('MIDE')
-            logger.debug(img.mode)
             #detect_faces(np.array(img.crop(boxes)), ind)
             ind += 1
             #img = np.array(img.crop(boxes).resize((224, 224), Image.BILINEAR)).reshape(3, 224, 224).astype(np.float32)
@@ -67,15 +63,10 @@ class Classifier(object):
                 Image.BILINEAR)), 2, 0).astype(np.float32)
             #img = np.array(Image.open(io.BytesIO(img.crop(boxes).resize((224, 224), Image.BILINEAR).tobytes())))
             #img = img.reshape(3, 224, 224).astype(np.float32)
-            #logger.debug()
             img /= 255
             img -= np.array([0.485, 0.456, 0.406])[:, None, None]
             img /= np.array([0.229, 0.224, 0.225])[:, None, None]
-            logger.debug(img.shape)
-            logger.debug(type(img))
 
-            logger.debug('box')
-            logger.debug(boxes)
             X.append(img)
 
         res = self.session.run([self.output_name], {self.input_name: np.array(X)})
@@ -84,7 +75,6 @@ class Classifier(object):
         norm_output = softmax(res[0])
         #e_x = np.exp(res[0] - np.expand_dims(np.max(res[0], axis=1),axis=1))
         #norm_output =  e_x / np.expand_dims(e_x.sum(axis=1),axis=1)
-        logger.debug(norm_output)
 
         pred = np.argmax(norm_output, axis=1)
         prob = np.max(norm_output, axis=1)

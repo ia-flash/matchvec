@@ -3,7 +3,8 @@ services:
   matchvec:
     container_name: ${USER}-matchvec
     build:
-      context: ./docker/cpu/${BACKEND}
+      context: ./
+      dockerfile: ./docker/cpu/${BACKEND}/Dockerfile
       args:
         - http_proxy=${http_proxy}
         - https_proxy=${http_proxy}
