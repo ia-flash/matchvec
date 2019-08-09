@@ -1,16 +1,121 @@
 import os
+import json
 import cv2
 import numpy as np
 from flask import Flask, send_from_directory, request, Blueprint, url_for
 from flask_restplus import Resource, Api, reqparse, fields
-from process import predict_class, predict_objects
+from matchvec.process import predict_class, predict_objects
 from werkzeug.datastructures import FileStorage
 from urllib.request import urlopen
+from matchvec.utils import logger
+from celery import Celery
+
 
 app = Flask(__name__)
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
 app.config.SWAGGER_UI_OPERATION_ID = True
 app.config.SWAGGER_UI_REQUEST_DURATION = True
+
+# Celery configuration
+app.config['CELERY_BROKER_URL'] = 'redis://redis:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://redis:6379/0'
+
+# Initialize Celery
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+celery.conf.update(app.config)
+
+
+######################
+#  long task celery  #
+######################
+
+
+@celery.task(bind=True)
+def long_task(self, video_name):
+    #video = request.files.getlist('video', None)
+    logger.debug(video_name)
+    res = list()
+    #if video:
+
+    #logger.debug("Filename {}".format(video[0].filename))
+    #video[0].save("/tmp/video")
+    cap = cv2.VideoCapture("/tmp/video", )
+    while not cap.isOpened():
+        cap = cv2.VideoCapture("/tmp/video", )
+        cv2.waitKey(1000)
+        print("Wait for the header")
+
+    pos_frame = cap.get(cv2.cv2.CAP_PROP_POS_FRAMES)
+    while True:
+        flag, frame = cap.read()
+        if flag:
+            # The frame is ready and already captured
+            pos_frame = int(cap.get(cv2.cv2.CAP_PROP_POS_FRAMES))
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.update_state(state='PROGRESS',
+                              meta={
+                                  'current': pos_frame,
+                                  'total': total_frames,
+                                  'partial_result': res
+                                  })
+            h, w,  _ = frame.shape
+            frame = frame[0:h,int(2*w/3):w]
+            #frame = frame[0:h,0:w]
+            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+
+            #retval, buff = cv2.imencode('.jpg', frame)
+            #logger.debug(h)
+            #logger.debug(w)
+            output = predict_class(frame)
+            if pos_frame == 0:
+                cv2.imwrite('imgtest1sur{}.jpg'.format(total_frames), frame)
+            if (pos_frame%50 == 0):
+                cv2.imwrite('imgtest{}.jpg'.format(pos_frame), frame)
+            #res = requests.post(url, files=files)
+            if len(output) > 0:
+                for box in output:
+                    logger.debug('Frame {}'.format(pos_frame))
+                    logger.debug(box)
+                    if float(box['confidence']) > 0.50 and float(box['prob'][0]) > 0.85:
+                        logger.debug(box['pred'][0])
+                        res.append({pos_frame: box['pred'][0]})
+                        cv2.imwrite('imgtest{}.jpg'.format(pos_frame), frame)
+        else:
+            break
+    #return res
+    return {'current': total_frames, 'total': total_frames, 'status': 'Task completed!',
+            'result': res}
+
+
+@app.route('/matchvec/status/<task_id>')
+def taskstatus(task_id):
+    task = long_task.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        response = {
+            'state': task.state,
+            'current': 0,
+            'total': 1,
+            'status': 'Pending...'
+        }
+    elif task.state != 'FAILURE':
+        response = {
+            'state': task.state,
+            'current': task.info.get('current', 0),
+            'total': task.info.get('total', 1),
+            'status': task.info.get('status', '')
+        }
+        if 'result' in task.info:
+            response['result'] = task.info['result']
+    else:
+        # something went wrong in the background job
+        response = {
+            'state': task.state,
+            'current': 1,
+            'total': 1,
+            'status': str(task.info),  # this is the exception raised
+        }
+    return json.dumps(response)
 
 
 ##########################
@@ -56,6 +161,9 @@ parser = reqparse.RequestParser()
 parser.add_argument('url', type=str, location='form', help='Image URL in jpg format. URL must end with jpg.')
 parser.add_argument('image', type=FileStorage, location='files', help='Image saved locally. Multiple images are allowed.')
 
+parser_video = reqparse.RequestParser()
+parser_video.add_argument('video', type=FileStorage, location='files', help='Video used for image analysis.')
+
 
 BaseOutput = api.model('BaseOutput', {
     'x1': fields.Integer(description='X1', min=0, example=10),
@@ -90,6 +198,24 @@ ClassificationOutput = api.inherit('ClassificationOutput', BaseOutput, {
                 example=[0.5462563633918762, 0.07783588021993637, 0.047950416803359985,
                     0.041797831654548645, 0.03768396005034447])
                 })
+
+
+@api.route('/video_detection')
+class VideoDetection(Resource):
+    """Docstring for MyClass. """
+
+    @api.expect(parser_video)
+    def post(self):
+        """Video detection"""
+        video = request.files.getlist('video', None)
+        logger.debug(video)
+        res = list()
+        if video:
+            video[0].save("/tmp/video")
+            task = long_task.delay(video[0].filename)
+            return {'task_id': task.id}, 202
+        else:
+            return {'status': 'no video'}, 404
 
 
 @api.route('/object_detection')

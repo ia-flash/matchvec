@@ -28,6 +28,13 @@ services:
       - traefik.port=5000
       - traefik.frontend.rule=PathPrefix:/matchvec/,/swaggerui/
       - traefik.frontend.priority=10
+  redis:
+    image: redis:alpine
+    container_name: ${USER}-redis
+    expose:
+      - 6379
+    networks:
+      - isolated_nw
 
 
 networks:
