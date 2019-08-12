@@ -79,7 +79,7 @@ def long_task(self, video_name):
                     logger.debug(box)
                     if float(box['confidence']) > 0.50 and float(box['prob'][0]) > 0.85:
                         logger.debug(box['pred'][0])
-                        res.append({pos_frame: box['pred'][0]})
+                        res.append({'frame': pos_frame, 'model': box['pred'][0]})
                         cv2.imwrite('imgtest{}.jpg'.format(pos_frame), frame)
         else:
             break
@@ -103,7 +103,8 @@ def taskstatus(task_id):
             'state': task.state,
             'current': task.info.get('current', 0),
             'total': task.info.get('total', 1),
-            'status': task.info.get('status', '')
+            'status': task.info.get('status', ''),
+            'partial_result': task.info.get('partial_result', list())
         }
         if 'result' in task.info:
             response['result'] = task.info['result']
@@ -208,7 +209,15 @@ class VideoDetection(Resource):
     def post(self):
         """Video detection"""
         video = request.files.getlist('video', None)
+        rotation = request.form.get('rotation', None)
+        crop_coord = request.form.get('crop_coord_x1', None)
+        crop_coord_x1 = request.form.get('crop_coord_x1', None)
+        crop_coord_x2 = request.form.get('crop_coord_x2', None)
+        crop_coord_y1 = request.form.get('crop_coord_y1', None)
+        crop_coord_y2 = request.form.get('crop_coord_y2', None)
         logger.debug(video)
+        logger.debug(rotation)
+        logger.debug(crop_coord)
         res = list()
         if video:
             video[0].save("/tmp/video")
