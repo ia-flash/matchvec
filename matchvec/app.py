@@ -1,6 +1,7 @@
 import os
 import json
 import cv2
+import base64
 import numpy as np
 from flask import Flask, send_from_directory, request, Blueprint, url_for
 from flask_restplus import Resource, Api, reqparse, fields
@@ -79,7 +80,12 @@ def long_task(self, video_name):
                     logger.debug(box)
                     if float(box['confidence']) > 0.50 and float(box['prob'][0]) > 0.85:
                         logger.debug(box['pred'][0])
-                        res.append({'frame': pos_frame, 'model': box['pred'][0]})
+                        # Convert captured image to JPG
+                        retval, buffer = cv2.imencode('.jpg', frame)
+                        # Convert to base64 encoding and show start of data
+                        jpg_as_text = base64.b64encode(buffer)
+                        base64_string = jpg_as_text.decode('utf-8')
+                        res.append({'frame': pos_frame, 'model': box['pred'][0], 'img': base64_string})
                         cv2.imwrite('imgtest{}.jpg'.format(pos_frame), frame)
         else:
             break
