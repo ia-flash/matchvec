@@ -31,8 +31,13 @@ celery.conf.update(app.config)
 ######################
 
 
+def rotate_frame90(image, number):
+    for i in range(number):
+        image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+    return image
+
 @celery.task(bind=True)
-def long_task(self, video_name):
+def long_task(self, video_name, rotation90):
     #video = request.files.getlist('video', None)
     logger.debug(video_name)
     res = list()
@@ -47,12 +52,13 @@ def long_task(self, video_name):
         print("Wait for the header")
 
     pos_frame = cap.get(cv2.cv2.CAP_PROP_POS_FRAMES)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
     while True:
         flag, frame = cap.read()
         if flag:
             # The frame is ready and already captured
             pos_frame = int(cap.get(cv2.cv2.CAP_PROP_POS_FRAMES))
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             self.update_state(state='PROGRESS',
                               meta={
                                   'current': pos_frame,
@@ -62,8 +68,7 @@ def long_task(self, video_name):
             h, w,  _ = frame.shape
             frame = frame[0:h,int(2*w/3):w]
             #frame = frame[0:h,0:w]
-            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+            frame = rotate_frame90(frame, rotation90)
 
             #retval, buff = cv2.imencode('.jpg', frame)
             #logger.debug(h)
@@ -80,18 +85,21 @@ def long_task(self, video_name):
                     logger.debug(box)
                     if float(box['confidence']) > 0.50 and float(box['prob'][0]) > 0.85:
                         logger.debug(box['pred'][0])
+                        # Print detected boxes
+                        cv2.rectangle(frame, (box['x1'], box['y1']), (box['x2'], box['y2']), (255, 0, 0), 6)
+                        cv2.putText(frame, box['label'], (box['x1'], box['y1'] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                         # Convert captured image to JPG
                         retval, buffer = cv2.imencode('.jpg', frame)
                         # Convert to base64 encoding and show start of data
                         jpg_as_text = base64.b64encode(buffer)
                         base64_string = jpg_as_text.decode('utf-8')
-                        res.append({'frame': pos_frame, 'model': box['pred'][0], 'img': base64_string})
+                        res.append({'frame': pos_frame, 'seconds': pos_frame/fps, 'model': box['pred'][0], 'img': base64_string})
                         cv2.imwrite('imgtest{}.jpg'.format(pos_frame), frame)
         else:
             break
     #return res
     return {'current': total_frames, 'total': total_frames, 'status': 'Task completed!',
-            'result': res}
+            'result': res, 'partial_result': res}
 
 
 @app.route('/matchvec/status/<task_id>')
@@ -215,7 +223,7 @@ class VideoDetection(Resource):
     def post(self):
         """Video detection"""
         video = request.files.getlist('video', None)
-        rotation = request.form.get('rotation', None)
+        rotation = int(request.form.get('rotation', 0))
         crop_coord = request.form.get('crop_coord_x1', None)
         crop_coord_x1 = request.form.get('crop_coord_x1', None)
         crop_coord_x2 = request.form.get('crop_coord_x2', None)
@@ -227,7 +235,7 @@ class VideoDetection(Resource):
         res = list()
         if video:
             video[0].save("/tmp/video")
-            task = long_task.delay(video[0].filename)
+            task = long_task.delay(video[0].filename, rotation)
             return {'task_id': task.id}, 202
         else:
             return {'status': 'no video'}, 404
