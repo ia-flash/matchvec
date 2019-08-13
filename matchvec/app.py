@@ -38,13 +38,8 @@ def rotate_frame90(image, number):
 
 @celery.task(bind=True)
 def long_task(self, video_name, rotation90):
-    #video = request.files.getlist('video', None)
     logger.debug(video_name)
     res = list()
-    #if video:
-
-    #logger.debug("Filename {}".format(video[0].filename))
-    #video[0].save("/tmp/video")
     cap = cv2.VideoCapture("/tmp/video", )
     while not cap.isOpened():
         cap = cv2.VideoCapture("/tmp/video", )
@@ -59,47 +54,45 @@ def long_task(self, video_name, rotation90):
         if flag:
             # The frame is ready and already captured
             pos_frame = int(cap.get(cv2.cv2.CAP_PROP_POS_FRAMES))
-            self.update_state(state='PROGRESS',
-                              meta={
-                                  'current': pos_frame,
-                                  'total': total_frames,
-                                  'partial_result': res
-                                  })
-            h, w,  _ = frame.shape
-            frame = frame[0:h,int(2*w/3):w]
-            #frame = frame[0:h,0:w]
-            frame = rotate_frame90(frame, rotation90)
+            # Every 10 frames
+            if pos_frame % 10 == 0:
+                h, w,  _ = frame.shape
+                # frame = frame[0:h,int(2*w/3):w]
+                frame = frame[0:h,0:w]
+                frame = rotate_frame90(frame, rotation90)
+                self.update_state(state='PROGRESS',
+                                  meta={
+                                      'current': pos_frame,
+                                      'total': total_frames,
+                                      'partial_result': res[-3:]
+                                      })
 
-            #retval, buff = cv2.imencode('.jpg', frame)
-            #logger.debug(h)
-            #logger.debug(w)
-            output = predict_class(frame)
-            if pos_frame == 0:
-                cv2.imwrite('imgtest1sur{}.jpg'.format(total_frames), frame)
-            if (pos_frame%50 == 0):
-                cv2.imwrite('imgtest{}.jpg'.format(pos_frame), frame)
-            #res = requests.post(url, files=files)
-            if len(output) > 0:
-                for box in output:
-                    logger.debug('Frame {}'.format(pos_frame))
-                    logger.debug(box)
-                    if float(box['confidence']) > 0.50 and float(box['prob'][0]) > 0.85:
-                        logger.debug(box['pred'][0])
-                        # Print detected boxes
-                        cv2.rectangle(frame, (box['x1'], box['y1']), (box['x2'], box['y2']), (255, 0, 0), 6)
-                        cv2.putText(frame, box['label'], (box['x1'], box['y1'] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                        # Convert captured image to JPG
-                        retval, buffer = cv2.imencode('.jpg', frame)
-                        # Convert to base64 encoding and show start of data
-                        jpg_as_text = base64.b64encode(buffer)
-                        base64_string = jpg_as_text.decode('utf-8')
-                        res.append({'frame': pos_frame, 'seconds': pos_frame/fps, 'model': box['pred'][0], 'img': base64_string})
-                        cv2.imwrite('imgtest{}.jpg'.format(pos_frame), frame)
+                output = predict_class(frame)
+                if len(output) > 0:
+                    for box in output:
+                        logger.debug('Frame {}'.format(pos_frame))
+                        logger.debug(box)
+                        if float(box['confidence']) > 0.50 and float(box['prob'][0]) > 0.85:
+                            logger.debug(box['pred'][0])
+                            # Print detected boxes
+                            cv2.rectangle(frame, (box['x1'], box['y1']), (box['x2'], box['y2']), (255, 0, 0), 6)
+                            cv2.putText(frame, box['label'], (box['x1'], box['y1'] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                            # Convert captured image to JPG
+                            retval, buffer = cv2.imencode('.jpg', frame)
+                            # Convert to base64 encoding and show start of data
+                            jpg_as_text = base64.b64encode(buffer)
+                            base64_string = jpg_as_text.decode('utf-8')
+                            res.append({'frame': pos_frame, 'seconds': pos_frame/fps, 'model': box['pred'][0], 'img': base64_string})
         else:
             break
-    #return res
     return {'current': total_frames, 'total': total_frames, 'status': 'Task completed!',
-            'result': res, 'partial_result': res}
+            'result': list(set([x['model'] for x in res])), 'partial_result': res[-3:]}
+
+
+@app.route('/matchvec/killtask/<task_id>')
+def killtask(task_id):
+    response = celery.control.revoke(task_id, terminate=True)
+    return json.dumps(response)
 
 
 @app.route('/matchvec/status/<task_id>')
