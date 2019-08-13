@@ -3,7 +3,8 @@ services:
   matchvec:
     container_name: ${USER}-matchvec
     build:
-      context: ./docker/cpu/${BACKEND}
+      context: ./
+      dockerfile: ./docker/cpu/${BACKEND}/Dockerfile
       args:
         - http_proxy=${http_proxy}
         - https_proxy=${http_proxy}
@@ -27,6 +28,13 @@ services:
       - traefik.port=5000
       - traefik.frontend.rule=PathPrefix:/matchvec/,/swaggerui/
       - traefik.frontend.priority=10
+  redis:
+    image: redis:alpine
+    container_name: ${USER}-redis
+    expose:
+      - 6379
+    networks:
+      - isolated_nw
 
 
 networks:

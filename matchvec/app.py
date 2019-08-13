@@ -1,16 +1,129 @@
 import os
+import json
 import cv2
+import base64
 import numpy as np
 from flask import Flask, send_from_directory, request, Blueprint, url_for
 from flask_restplus import Resource, Api, reqparse, fields
-from process import predict_class, predict_objects
+from matchvec.process import predict_class, predict_objects
 from werkzeug.datastructures import FileStorage
 from urllib.request import urlopen
+from matchvec.utils import logger
+from celery import Celery
+
 
 app = Flask(__name__)
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
 app.config.SWAGGER_UI_OPERATION_ID = True
 app.config.SWAGGER_UI_REQUEST_DURATION = True
+
+# Celery configuration
+app.config['CELERY_BROKER_URL'] = 'redis://redis:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://redis:6379/0'
+
+# Initialize Celery
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+celery.conf.update(app.config)
+
+
+######################
+#  long task celery  #
+######################
+
+
+def rotate_frame90(image, number):
+    for i in range(number):
+        image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+    return image
+
+@celery.task(bind=True)
+def long_task(self, video_name, rotation90):
+    logger.debug(video_name)
+    res = list()
+    cap = cv2.VideoCapture("/tmp/video", )
+    while not cap.isOpened():
+        cap = cv2.VideoCapture("/tmp/video", )
+        cv2.waitKey(1000)
+        print("Wait for the header")
+
+    pos_frame = cap.get(cv2.cv2.CAP_PROP_POS_FRAMES)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    while True:
+        flag, frame = cap.read()
+        if flag:
+            # The frame is ready and already captured
+            pos_frame = int(cap.get(cv2.cv2.CAP_PROP_POS_FRAMES))
+            # Every 10 frames
+            if pos_frame % 10 == 0:
+                h, w,  _ = frame.shape
+                # frame = frame[0:h,int(2*w/3):w]
+                frame = frame[0:h,0:w]
+                frame = rotate_frame90(frame, rotation90)
+                self.update_state(state='PROGRESS',
+                                  meta={
+                                      'current': pos_frame,
+                                      'total': total_frames,
+                                      'partial_result': res[-3:]
+                                      })
+
+                output = predict_class(frame)
+                if len(output) > 0:
+                    for box in output:
+                        logger.debug('Frame {}'.format(pos_frame))
+                        logger.debug(box)
+                        if float(box['confidence']) > 0.50 and float(box['prob'][0]) > 0.85:
+                            logger.debug(box['pred'][0])
+                            # Print detected boxes
+                            cv2.rectangle(frame, (box['x1'], box['y1']), (box['x2'], box['y2']), (255, 0, 0), 6)
+                            cv2.putText(frame, box['label'], (box['x1'], box['y1'] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                            # Convert captured image to JPG
+                            retval, buffer = cv2.imencode('.jpg', frame)
+                            # Convert to base64 encoding and show start of data
+                            jpg_as_text = base64.b64encode(buffer)
+                            base64_string = jpg_as_text.decode('utf-8')
+                            res.append({'frame': pos_frame, 'seconds': pos_frame/fps, 'model': box['pred'][0], 'img': base64_string})
+        else:
+            break
+    return {'current': total_frames, 'total': total_frames, 'status': 'Task completed!',
+            'result': list(set([x['model'] for x in res])), 'partial_result': res[-3:]}
+
+
+@app.route('/matchvec/killtask/<task_id>')
+def killtask(task_id):
+    response = celery.control.revoke(task_id, terminate=True)
+    return json.dumps(response)
+
+
+@app.route('/matchvec/status/<task_id>')
+def taskstatus(task_id):
+    task = long_task.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        response = {
+            'state': task.state,
+            'current': 0,
+            'total': 1,
+            'status': 'Pending...'
+        }
+    elif task.state != 'FAILURE':
+        response = {
+            'state': task.state,
+            'current': task.info.get('current', 0),
+            'total': task.info.get('total', 1),
+            'status': task.info.get('status', ''),
+            'partial_result': task.info.get('partial_result', list())
+        }
+        if 'result' in task.info:
+            response['result'] = task.info['result']
+    else:
+        # something went wrong in the background job
+        response = {
+            'state': task.state,
+            'current': 1,
+            'total': 1,
+            'status': str(task.info),  # this is the exception raised
+        }
+    return json.dumps(response)
 
 
 ##########################
@@ -56,6 +169,9 @@ parser = reqparse.RequestParser()
 parser.add_argument('url', type=str, location='form', help='Image URL in jpg format. URL must end with jpg.')
 parser.add_argument('image', type=FileStorage, location='files', help='Image saved locally. Multiple images are allowed.')
 
+parser_video = reqparse.RequestParser()
+parser_video.add_argument('video', type=FileStorage, location='files', help='Video used for image analysis.')
+
 
 BaseOutput = api.model('BaseOutput', {
     'x1': fields.Integer(description='X1', min=0, example=10),
@@ -90,6 +206,32 @@ ClassificationOutput = api.inherit('ClassificationOutput', BaseOutput, {
                 example=[0.5462563633918762, 0.07783588021993637, 0.047950416803359985,
                     0.041797831654548645, 0.03768396005034447])
                 })
+
+
+@api.route('/video_detection')
+class VideoDetection(Resource):
+    """Docstring for MyClass. """
+
+    @api.expect(parser_video)
+    def post(self):
+        """Video detection"""
+        video = request.files.getlist('video', None)
+        rotation = int(request.form.get('rotation', 0))
+        crop_coord = request.form.get('crop_coord_x1', None)
+        crop_coord_x1 = request.form.get('crop_coord_x1', None)
+        crop_coord_x2 = request.form.get('crop_coord_x2', None)
+        crop_coord_y1 = request.form.get('crop_coord_y1', None)
+        crop_coord_y2 = request.form.get('crop_coord_y2', None)
+        logger.debug(video)
+        logger.debug(rotation)
+        logger.debug(crop_coord)
+        res = list()
+        if video:
+            video[0].save("/tmp/video")
+            task = long_task.delay(video[0].filename, rotation)
+            return {'task_id': task.id}, 202
+        else:
+            return {'status': 'no video'}, 404
 
 
 @api.route('/object_detection')

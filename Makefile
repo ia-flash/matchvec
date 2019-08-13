@@ -40,6 +40,9 @@ dev: docker/env.list docker/conf.list
 up: docker/env.list docker/conf.list
 	$(COMPOSE) up -d
 
+celery:
+	$(COMPOSE) exec matchvec sh -c "cd matchvec && celery worker -A app.celery --loglevel=debug"
+
 stop:
 	$(COMPOSE) stop
 

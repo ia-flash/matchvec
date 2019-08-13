@@ -8,14 +8,14 @@ from PIL import Image
 from importlib import import_module
 from itertools import combinations, product
 from typing import List, Union
-from utils import timeit
+from matchvec.utils import timeit
 
 assert os.environ['BACKEND'] in ['onnx','torch']
 
-Detector = import_module(os.getenv('DETECTION_MODEL') + '_detection').Detector
+Detector = import_module('matchvec.' + os.getenv('DETECTION_MODEL') + '_detection').Detector
 detector = Detector()
 
-Classifier = import_module('classification_' + os.getenv('BACKEND')).Classifier
+Classifier = import_module('matchvec.' + 'classification_' + os.getenv('BACKEND')).Classifier
 classifier = Classifier()
 
 
@@ -177,9 +177,6 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
     if len(selected_boxes) > 0:
 
         pred, prob = classifier.prediction(selected_boxes)
-        logger.debug('OUT')
-        logger.debug(pred)
-        logger.debug(prob)
         df = df.assign(
                 pred=pred,
                 prob=prob,
