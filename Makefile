@@ -41,10 +41,18 @@ up: docker/env.list docker/conf.list
 	$(COMPOSE) up -d
 
 celery:
-	$(COMPOSE) exec matchvec sh -c "cd matchvec && celery worker -A app.celery --loglevel=debug"
+	if [ "${GPU}" = 1 ]; then \
+	$(COMPOSE) exec matchvec celery worker -A app.celery --loglevel=debug --workdir /app/matchvec --pool solo; \
+	else \
+	$(COMPOSE) exec matchvec celery worker -A app.celery --loglevel=debug --workdir /app/matchvec; \
+	fi
 
 celery_prod:
-	$(COMPOSE) exec matchvec sh -c "cd matchvec && celery worker -A app.celery --loglevel=error --detach;"
+	if [ "${GPU}" = 1 ]; then \
+	$(COMPOSE) exec matchvec celery worker -A app.celery --loglevel=error --workdir /app/matchvec --pool solo; \
+	else \
+	$(COMPOSE) exec matchvec celery worker -A app.celery --loglevel=error --workdir /app/matchvec --detach; \
+	fi
 
 stop:
 	$(COMPOSE) stop
