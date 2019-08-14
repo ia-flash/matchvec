@@ -6,3 +6,4 @@ dist
 model
 docs/build
 celery.pid
+celeryd.pid
