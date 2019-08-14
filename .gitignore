@@ -5,3 +5,4 @@ __pycache__
 dist
 model
 docs/build
+celery.pid
