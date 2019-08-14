@@ -59,7 +59,7 @@ def long_task(self, video_name, rotation90):
             if pos_frame % 10 == 0:
                 h, w,  _ = frame.shape
                 # frame = frame[0:h,int(2*w/3):w]
-                frame = frame[0:h,0:w]
+                frame = frame[0:h, 0:w]
                 frame = rotate_frame90(frame, rotation90)
                 self.update_state(state='PROGRESS',
                                   meta={
