@@ -1,7 +1,6 @@
 """Yolo detection"""
 import os
 import cv2
-import json
 import numpy as np
 import pandas as pd
 import torch
@@ -11,7 +10,7 @@ from mmdet.apis import inference_detector, init_detector
 from mmdet.core import get_classes
 
 from typing import List
-from utils import timeit, logger
+from matchvec.utils import timeit, logger
 
 DETECTION_MODEL = os.getenv('DETECTION_MODEL')
 DETECTION_THRESHOLD = float(os.getenv('DETECTION_THRESHOLD'))
@@ -61,7 +60,6 @@ def det_bboxes(bboxes,
 
     to_save = []
 
-
     for bbox, label in zip(bboxes, labels):
         bbox_int = bbox.astype(np.int32)
         label_text = class_names[
@@ -73,6 +71,7 @@ def det_bboxes(bboxes,
                             'class_name':label_text,'confidence':bbox[-1]})
 
     return to_save
+
 
 def save_result(result,
                 class_to_keep=[],
@@ -94,13 +93,12 @@ def save_result(result,
     labels = np.concatenate(labels)
     bboxes = np.vstack(result)
 
-    return  det_bboxes(
+    return det_bboxes(
         bboxes,
         labels,
         class_names=class_names,
         class_to_keep=class_to_keep,
         score_thr=score_thr)
-
 
 
 class Detector():
@@ -134,7 +132,7 @@ class Detector():
         Returns:
             result: Yolo boxes from object detections
         """
-        image = cv2.cvtColor(image , cv2.COLOR_RGB2BGR)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         result = inference_detector(self.model, image)
 
         return result
@@ -151,8 +149,8 @@ class Detector():
             result: Yolo boxes from object detections
         """
         result = []
-        for one_image in image :
-            one_result = prediction(one_image)
+        for one_image in image:
+            one_result = self.prediction(one_image)
             result.append(one_result)
         return result
 
@@ -178,7 +176,7 @@ class Detector():
         return df
 
     def batch_create_df(self, result: List[List[np.ndarray]],
-                  image: List[np.ndarray]) -> List[pd.DataFrame]:
+                        image: List[np.ndarray]) -> List[pd.DataFrame]:
         """Filter predictions and create an output DataFrame
 
         Args:
@@ -189,9 +187,8 @@ class Detector():
             df: Onject detection predictions filtered
         """
         df = []
-        for one_result, one_image in zip(result,image) :
-            one_df = create_df(one_result, one_image)
+        for one_result, one_image in zip(result, image):
+            one_df = self.create_df(one_result, one_image)
             df.append(one_df)
-
 
         return df

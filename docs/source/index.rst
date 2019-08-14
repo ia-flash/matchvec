@@ -67,7 +67,11 @@ Process function
 Classification model
 --------------------
 
-.. automodule:: classification
+.. automodule:: classification_onnx
+    :members:
+
+
+.. automodule:: classification_torch
     :members:
 
 

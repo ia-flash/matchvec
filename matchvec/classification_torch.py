@@ -1,5 +1,4 @@
 import cv2
-import io
 import os
 import json
 import numpy as np
@@ -9,8 +8,7 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 from collections import OrderedDict
 from typing import List, Tuple, Dict
-from utils import timeit, logger
-from PIL import Image
+from matchvec.utils import timeit, logger
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
@@ -131,13 +129,10 @@ class Classifier(object):
         final_pred: List = list()
         final_prob: List = list()
         for inp in val_loader:
-            if device.type == 'cuda' :
+            if device.type == 'cuda':
                 inp = inp.cuda(device, non_blocking=True)
 
-            #logger.debug(inp.shape)
-
             output = self.classification_model(inp)
-            logger.debug(inp.data.numpy()[0])
 
             softmax = nn.Softmax(dim=1)
             norm_output = softmax(output)
@@ -149,15 +144,12 @@ class Classifier(object):
                     for i in range(len(pred))
                     ]
             prob = probs.data.cpu().tolist()
-            #logger.debug('torch pred')
-            #logger.debug(pred)
-            #logger.debug(prob)
             final_pred.extend(pred_class)
             final_prob.extend(prob)
         return final_pred, final_prob
 
+
 def detect_faces(image, ind):
-    import sdfsf
     THRESHOLD = 0.2
 
     # load our serialized model from disk
@@ -168,8 +160,6 @@ def detect_faces(image, ind):
 
     # load the input image and construct an input blob for the image
     # by resizing to a fixed 300x300 pixels and then normalizing it
-    #image = cv2.imread('/app/radars/00202_20180118_223914_00030_1.jpg')
-    #image = cv2.imread('/app' + '/radars/00202_20180118_223914_00030_1.jpg')
     (h, w) = image.shape[:2]
     blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
 
@@ -203,5 +193,4 @@ def detect_faces(image, ind):
                 cv2.putText(image, text, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
 
     cv2.imwrite('image{}.jpg'.format(ind), image)
-
     logger.debug('Count: {}'.format(count))

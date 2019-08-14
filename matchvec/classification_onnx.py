@@ -1,12 +1,9 @@
 """Classification Marque Modèle"""
-import cv2
-import io
 import os
 import json
 import numpy as np
-from collections import OrderedDict
-from typing import List, Tuple, Dict
-from matchvec.utils import timeit, logger
+from typing import List, Tuple
+from matchvec.utils import timeit
 import onnxruntime
 from PIL import Image
 
@@ -19,11 +16,11 @@ with open(filename) as json_data:
     all_categories = json.load(json_data)
     CLASS_NUMBER = len(all_categories)
 
+
 def softmax(x):
     """Compute softmax values for each sets of scores in x."""
-    e_x = np.exp(x - np.expand_dims(np.max(x, axis=1),axis=1))
-    return  e_x / np.expand_dims(e_x.sum(axis=1),axis=1)
-
+    e_x = np.exp(x - np.expand_dims(np.max(x, axis=1), axis=1))
+    return e_x / np.expand_dims(e_x.sum(axis=1), axis=1)
 
 
 class Classifier(object):
@@ -34,10 +31,12 @@ class Classifier(object):
 
     @timeit
     def __init__(self):
-        self.session = onnxruntime.InferenceSession(os.path.join('/model', CLASSIFICATION_MODEL,"classifcation_model.onnx"))
+        self.session = onnxruntime.InferenceSession(
+                os.path.join(
+                    '/model', CLASSIFICATION_MODEL, "classifcation_model.onnx"
+                    ))
         self.output_name = self.session.get_outputs()[0].name
         self.input_name = self.session.get_inputs()[0].name
-
 
     def prediction(self, selected_boxes: Tuple[np.ndarray, List[float]]):
         """Inference in image
@@ -47,10 +46,12 @@ class Classifier(object):
         3. The results are concatenated
 
         Args:
-            selected_boxes: Contains a List of Tuple with the image and coordinates of the crop.
+            selected_boxes: Contains a List of Tuple with the image and
+            coordinates of the crop.
 
         Returns:
-            (final_pred, final_prob): The result is two lists with the top 5 class prediction and the probabilities
+            (final_pred, final_prob): The result is two lists with the top 5
+            class prediction and the probabilities
         """
 
         X = list()
@@ -61,7 +62,6 @@ class Classifier(object):
             #img = np.array(img.crop(boxes).resize((224, 224), Image.BILINEAR)).reshape(3, 224, 224).astype(np.float32)
             img = np.moveaxis(np.array(img.crop(boxes).resize((224, 224),
                 Image.BILINEAR)), 2, 0).astype(np.float32)
-            #img = np.array(Image.open(io.BytesIO(img.crop(boxes).resize((224, 224), Image.BILINEAR).tobytes())))
             #img = img.reshape(3, 224, 224).astype(np.float32)
             img /= 255
             img -= np.array([0.485, 0.456, 0.406])[:, None, None]
@@ -73,8 +73,6 @@ class Classifier(object):
         #res = self.session.run([self.output_name], {self.input_name: np.expand_dims(img,axis=0)})
 
         norm_output = softmax(res[0])
-        #e_x = np.exp(res[0] - np.expand_dims(np.max(res[0], axis=1),axis=1))
-        #norm_output =  e_x / np.expand_dims(e_x.sum(axis=1),axis=1)
 
         pred = np.argmax(norm_output, axis=1)
         prob = np.max(norm_output, axis=1)

@@ -30,6 +30,14 @@ author = 'Cristian Perez'
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx_autodoc_typehints']
 
+# A list of ignored prefixes for module index sorting.
+# modindex_common_prefix = []
+
+if os.getenv('BACKEND') == 'onnx':
+    autodoc_mock_imports = ['torch', 'torchvision']
+if os.getenv('BACKEND') == 'torch':
+    autodoc_mock_imports = ['onnx', 'onnxruntime']
+
 # Napoleon settings
 
 napoleon_google_docstrings = True

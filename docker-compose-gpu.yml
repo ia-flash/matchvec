@@ -3,7 +3,8 @@ services:
   matchvec:
     container_name: ${USER}-matchvec
     build:
-      context: ./docker/gpu/${BACKEND}
+      context: ./
+      dockerfile: ./docker/gpu/${BACKEND}/Dockerfile
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=0

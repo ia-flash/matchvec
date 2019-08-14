@@ -18,12 +18,14 @@ RUN apt-get update && \
 
 RUN pip install --upgrade pip
 
-COPY ./requirements.txt /workspace/requirements.txt
+COPY ./matchvec /app/matchvec
+COPY ./setup.py /app
+COPY ./docker/gpu/torch/requirements.txt /workspace
+
+
 # mmcv requires cython==0.29.12 installed
 RUN pip3 install cython
 RUN pip3 install -r /workspace/requirements.txt
-
-COPY . /workspace/
 
 RUN git clone https://github.com/open-mmlab/mmdetection.git mmdetection
 RUN cd /workspace/mmdetection && \
@@ -36,5 +38,7 @@ RUN cd /workspace/mmdetection && \
 
 RUN mkdir /.cache && chmod -R a+rw /.cache/
 WORKDIR /app
+
+RUN pip3 install -e .
 
 CMD [ "python3", "matchvec/app.py" ]

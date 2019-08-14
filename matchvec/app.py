@@ -36,6 +36,7 @@ def rotate_frame90(image, number):
         image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
     return image
 
+
 @celery.task(bind=True)
 def long_task(self, video_name, rotation90):
     logger.debug(video_name)
@@ -58,7 +59,7 @@ def long_task(self, video_name, rotation90):
             if pos_frame % 10 == 0:
                 h, w,  _ = frame.shape
                 # frame = frame[0:h,int(2*w/3):w]
-                frame = frame[0:h,0:w]
+                frame = frame[0:h, 0:w]
                 frame = rotate_frame90(frame, rotation90)
                 self.update_state(state='PROGRESS',
                                   meta={
@@ -170,7 +171,8 @@ parser.add_argument('url', type=str, location='form', help='Image URL in jpg for
 parser.add_argument('image', type=FileStorage, location='files', help='Image saved locally. Multiple images are allowed.')
 
 parser_video = reqparse.RequestParser()
-parser_video.add_argument('video', type=FileStorage, location='files', help='Video used for image analysis.')
+parser_video.add_argument('video', type=FileStorage, location='files',
+                          help='Video used for image analysis.')
 
 
 BaseOutput = api.model('BaseOutput', {
@@ -208,7 +210,7 @@ ClassificationOutput = api.inherit('ClassificationOutput', BaseOutput, {
                 })
 
 
-@api.route('/video_detection')
+@api.route('/video_detection', doc=False)
 class VideoDetection(Resource):
     """Docstring for MyClass. """
 
@@ -217,15 +219,8 @@ class VideoDetection(Resource):
         """Video detection"""
         video = request.files.getlist('video', None)
         rotation = int(request.form.get('rotation', 0))
-        crop_coord = request.form.get('crop_coord_x1', None)
-        crop_coord_x1 = request.form.get('crop_coord_x1', None)
-        crop_coord_x2 = request.form.get('crop_coord_x2', None)
-        crop_coord_y1 = request.form.get('crop_coord_y1', None)
-        crop_coord_y2 = request.form.get('crop_coord_y2', None)
         logger.debug(video)
         logger.debug(rotation)
-        logger.debug(crop_coord)
-        res = list()
         if video:
             video[0].save("/tmp/video")
             task = long_task.delay(video[0].filename, rotation)
