@@ -12,6 +12,7 @@ RUN apt-get update && \
             python-opencv \
             protobuf-compiler \
             libprotoc-dev \
+            libmediainfo0v5 \
             python3-pip && \
       rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

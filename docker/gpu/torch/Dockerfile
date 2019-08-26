@@ -13,6 +13,7 @@ RUN apt-get update && \
             libxrender-dev \
             python3 \
             python-opencv \
+            libmediainfo0v5 \
             python3-pip && \
       rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
