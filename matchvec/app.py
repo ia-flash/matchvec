@@ -10,6 +10,7 @@ from werkzeug.datastructures import FileStorage
 from urllib.request import urlopen
 from matchvec.utils import logger
 from celery import Celery
+from pymediainfo import MediaInfo
 
 
 app = Flask(__name__)
@@ -42,6 +43,11 @@ def long_task(self, video_name, rotation90):
     logger.debug(video_name)
     res = list()
     cap = cv2.VideoCapture("/tmp/video", )
+    media_info = MediaInfo.parse('/tmp/video')
+    myjson = json.loads(media_info.to_json())
+    rotation = myjson['tracks'][1]['rotation']
+    total_rotation = int(float(rotation)/90) + rotation90
+    logger.debug('ROTATION {}'.format(rotation))
     while not cap.isOpened():
         cap = cv2.VideoCapture("/tmp/video", )
         cv2.waitKey(1000)
@@ -60,7 +66,7 @@ def long_task(self, video_name, rotation90):
                 h, w,  _ = frame.shape
                 # frame = frame[0:h,int(2*w/3):w]
                 frame = frame[0:h, 0:w]
-                frame = rotate_frame90(frame, rotation90)
+                frame = rotate_frame90(frame, total_rotation)
                 self.update_state(state='PROGRESS',
                                   meta={
                                       'current': pos_frame,
