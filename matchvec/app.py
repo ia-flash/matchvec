@@ -41,7 +41,7 @@ def rotate_frame90(image, number):
 @celery.task(bind=True)
 def long_task(self, video_name, rotation90):
     logger.debug(video_name)
-    res = list()
+    res = dict()
     cap = cv2.VideoCapture("/tmp/video", )
     media_info = MediaInfo.parse('/tmp/video')
     myjson = json.loads(media_info.to_json())
@@ -71,7 +71,9 @@ def long_task(self, video_name, rotation90):
                                   meta={
                                       'current': pos_frame,
                                       'total': total_frames,
-                                      'partial_result': res[-3:]
+                                      'partial_result': [{
+                                          'frame': res[key]['frame'], 'seconds': res[key]['seconds'],
+                                          'model': key, 'img': res[key]['img']} for key in res]
                                       })
 
                 output = predict_class(frame)
@@ -89,11 +91,15 @@ def long_task(self, video_name, rotation90):
                             # Convert to base64 encoding and show start of data
                             jpg_as_text = base64.b64encode(buffer)
                             base64_string = jpg_as_text.decode('utf-8')
-                            res.append({'frame': pos_frame, 'seconds': pos_frame/fps, 'model': box['pred'][0], 'img': base64_string})
+                            modele = box['pred'][0]
+                            res[modele] = {'frame': pos_frame, 'seconds': pos_frame/fps, 'model': box['pred'][0], 'img': base64_string}
         else:
             break
     return {'current': total_frames, 'total': total_frames, 'status': 'Task completed!',
-            'result': list(set([x['model'] for x in res])), 'partial_result': res[-3:]}
+            'partial_result': [{
+                'frame': res[key]['frame'], 'seconds': res[key]['seconds'],
+                'model': key, 'img': res[key]['img']} for key in res],
+            'result': list(res.keys())}
 
 
 @app.route('/matchvec/killtask/<task_id>')
