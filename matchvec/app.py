@@ -39,30 +39,32 @@ def rotate_frame90(image, number):
 
 
 @celery.task(bind=True)
-def long_task(self, video_name, rotation90):
+def long_task(self, video_name, rotation90, prob_detection, prob_classification, selected_fps):
     logger.debug(video_name)
     res = dict()
     cap = cv2.VideoCapture("/tmp/video", )
     media_info = MediaInfo.parse('/tmp/video')
     myjson = json.loads(media_info.to_json())
     rotation = myjson['tracks'][1]['rotation']
-    total_rotation = int(float(rotation)/90) + rotation90
-    logger.debug('ROTATION {}'.format(rotation))
+    total_rotation = int(float(rotation)/90) + int(rotation90/90)
+    logger.debug('Rotation total {}'.format(rotation))
     while not cap.isOpened():
         cap = cv2.VideoCapture("/tmp/video", )
         cv2.waitKey(1000)
-        print("Wait for the header")
+        logger.debug("Wait for the header")
 
     pos_frame = cap.get(cv2.cv2.CAP_PROP_POS_FRAMES)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = int(cap.get(cv2.CAP_PROP_FPS))
+    skip_images = int(fps/selected_fps)
+    logger.debug("Real fps {}, selected fps: {}, taking 1 image between {}".format(fps, selected_fps, skip_images))
     while True:
         flag, frame = cap.read()
         if flag:
             # The frame is ready and already captured
             pos_frame = int(cap.get(cv2.cv2.CAP_PROP_POS_FRAMES))
             # Every 10 frames
-            if pos_frame % 10 == 0:
+            if pos_frame % skip_images == 0:
                 h, w,  _ = frame.shape
                 # frame = frame[0:h,int(2*w/3):w]
                 frame = frame[0:h, 0:w]
@@ -81,7 +83,7 @@ def long_task(self, video_name, rotation90):
                     for box in output:
                         logger.debug('Frame {}'.format(pos_frame))
                         logger.debug(box)
-                        if float(box['confidence']) > 0.50 and float(box['prob'][0]) > 0.85:
+                        if float(box['confidence']) > (prob_detection/100) and float(box['prob'][0]) > (prob_classification/100):
                             logger.debug(box['pred'][0])
                             # Print detected boxes
                             cv2.rectangle(frame, (box['x1'], box['y1']), (box['x2'], box['y2']), (255, 0, 0), 6)
@@ -231,11 +233,14 @@ class VideoDetection(Resource):
         """Video detection"""
         video = request.files.getlist('video', None)
         rotation = int(request.form.get('rotation', 0))
+        prob_detection = int(request.form.get('probDetection', 0))
+        prob_classification = int(request.form.get('probClassification', 0))
+        fps = int(request.form.get('fps', 0))
         logger.debug(video)
         logger.debug(rotation)
         if video:
             video[0].save("/tmp/video")
-            task = long_task.delay(video[0].filename, rotation)
+            task = long_task.delay(video[0].filename, rotation, prob_detection, prob_classification, fps)
             return {'task_id': task.id}, 202
         else:
             return {'status': 'no video'}, 404
