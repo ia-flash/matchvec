@@ -49,7 +49,7 @@ celery:
 
 celery_prod:
 	if [ "${GPU}" = 1 ]; then \
-	$(COMPOSE) exec matchvec celery worker -A app.celery --loglevel=error --workdir /app/matchvec --pool solo; \
+	$(COMPOSE) exec matchvec celery worker -A app.celery --loglevel=error --workdir /app/matchvec --pool solo --detach; \
 	else \
 	$(COMPOSE) exec matchvec celery worker -A app.celery --loglevel=error --workdir /app/matchvec --detach; \
 	fi

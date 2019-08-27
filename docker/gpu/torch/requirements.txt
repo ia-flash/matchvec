@@ -11,3 +11,4 @@ flask-restplus==0.12.1
 sphinx-rtd-theme==0.4.3
 celery==4.3.0
 redis==3.3.6
+pymediainfo==4.0
