@@ -8,7 +8,7 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 20
+    Timeout: 40
     MemorySize: 512
     Environment:
       Variables:
@@ -29,11 +29,16 @@ Resources:
         - arn:aws:lambda:eu-west-1:016363657960:layer:pandas-layer:2
         - arn:aws:lambda:eu-west-1:016363657960:layer:pillow-layer:1
       Events:
-        HelloWorld:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+        GetEvent:
+          Type: Api
           Properties:
-            Path: /test
-            Method: get
+            Path: /
+            Method: GET
+        PostEvent:
+          Type: Api
+          Properties:
+            Path: /post
+            Method: POST
 
 #Outputs:
 #   ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
