@@ -18,6 +18,11 @@ Globals:
         DETECTION_MODEL: ssd
         CLASSIFICATION_MODEL: resnet18-102
 Resources:
+  IAFlashApiGateway: 
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      DefinitionUri: ./swagger.yaml
   IAFlashFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -25,6 +30,8 @@ Resources:
       Handler: lambda_function.lambda_handler
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/lambda
       Runtime: python3.7
+      Policies:
+        - AWSLambdaBasicExecutionRole
       Layers:
         - arn:aws:lambda:eu-west-1:016363657960:layer:onnx-layer:3
         - arn:aws:lambda:eu-west-1:016363657960:layer:opencv-layer:2
@@ -34,6 +41,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
+            RestApiId: !Ref "IAFlashApiGateway"
             Path: /
             Method: GET
         PostEvent:
