@@ -13,6 +13,13 @@ paths:
       responses:
         '200':
           description: Result is a list of the following element (double list)
+          headers:
+            Access-Control-Allow-Headers:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
           schema:
             type: array
             items:
@@ -32,6 +39,7 @@ paths:
         type: file
         description: Image saved locally. Multiple images are allowed.
       consumes:
+      - application/json
       - multipart/form-data
       tags:
       - default
@@ -47,6 +55,10 @@ paths:
         responses:
           default:
             statusCode: 200
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods : "'*'"
+              method.response.header.Access-Control-Allow-Origin : "'*'"
         requestTemplates:
           application/json: "{\r\n  \"body\" : \"$input.body\"  \r\n}"
   "/test":
@@ -62,8 +74,6 @@ paths:
             type: object
       summary: Test function
       operationId: get_test
-      consumes:
-      - multipart/form-data
       tags:
       - default
       # For AWS Integration
