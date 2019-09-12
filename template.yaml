@@ -26,6 +26,7 @@ Resources:
   IAFlashFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
+      FunctionName: IAFlashFunction
       CodeUri: matchvec/
       Handler: lambda_function.lambda_handler
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/lambda
@@ -47,6 +48,7 @@ Resources:
         PostEvent:
           Type: Api
           Properties:
+            RestApiId: !Ref "IAFlashApiGateway"
             Path: /post
             Method: POST
 
