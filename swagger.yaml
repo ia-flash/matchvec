@@ -8,69 +8,33 @@ basePath: "/v1"
 schemes:
 - "https"
 paths:
-  /post:
+  "/predict":
     post:
-      tags:
-      - "marquemodele"
-      summary: "Add a new pet to the store"
-      description: ""
-      operationId: "classification"
-      consumes:
-      - "application/json"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "Pet object that needs to be added to the store"
-        required: true
-        schema:
-          $ref: "#/definitions/ImageObj"
       responses:
-        200:
-          description: "Success"
-        400:
-          description: "Bad Request"
-        401:
-          description: "Unauthorized"
-        500:
-          description: "Internal Server Error"
-      # For AWS Integration
-      x-amazon-apigateway-request-validators:
-        basic:
-          validateRequestParameters: true
-      x-amazon-apigateway-integration:
-        type: "aws"
-        httpMethod: "POST"
-        # Replace AWS_REGION and ACCOUNT_ID in uri
-        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:IAFlashFunction/invocations"
-        responses:
-          default:
-            statusCode: 200
-        requestTemplates:
-          application/json: "{\r\n  \"method\": \"$context.httpMethod\",\r\n  \"body\" : \"$input.body\",\r\n  \"headers\": {\r\n    #foreach($param in $input.params().header.keySet())\r\n    \"$param\": \"$util.escapeJavaScript($input.params().header.get($param))\" #if($foreach.hasNext),#end\r\n\r\n    #end\r\n  },\r\n  \"queryParams\": {\r\n    #foreach($param in $input.params().querystring.keySet())\r\n    \"$param\": \"$util.escapeJavaScript($input.params().querystring.get($param))\" #if($foreach.hasNext),#end\r\n\r\n    #end\r\n  },\r\n  \"pathParams\": {\r\n    #foreach($param in $input.params().path.keySet())\r\n    \"$param\": \"$util.escapeJavaScript($input.params().path.get($param))\" #if($foreach.hasNext),#end\r\n\r\n    #end\r\n  }  \r\n}"
-  /:
-    get:
-      tags:
-      - "test"
-      summary: "Find pet by ID"
-      description: "Returns a single pet"
-      operationId: "testRoute"
-      produces:
-      - "application/json"
-      responses:
-        200:
-          description: "Success"
+        '200':
+          description: Result is a list of the following element (double list)
           schema:
-            $ref: "#/definitions/ImageObj"
-        400:
-          description: "Bad Request"
-        401:
-          description: "Unauthorized"
-        404:
-          description: "Not Found"
-        500:
-          description: "Internal Server Error"
+            type: array
+            items:
+              "$ref": "#/definitions/ClassificationOutput"
+      summary: Brand and model classifcation
+      description: |-
+        Image can be loaded either by using an internet URL in the url field or
+        by using a local stored image in the image field
+      operationId: post_class_prediction
+      parameters:
+      - name: url
+        in: formData
+        type: string
+        description: Image URL in jpg format. URL must end with jpg.
+      - name: image
+        in: formData
+        type: file
+        description: Image saved locally. Multiple images are allowed.
+      consumes:
+      - multipart/form-data
+      tags:
+      - default
       # For AWS Integration
       x-amazon-apigateway-request-validators:
         basic:
@@ -85,9 +49,98 @@ paths:
             statusCode: 200
         requestTemplates:
           application/json: "{\r\n  \"body\" : \"$input.body\"  \r\n}"
+  "/test":
+    get:
+      responses:
+        '200':
+          description: Result is a list of the following element (double list)
+          schema:
+            properties:
+              body:
+                type: string
+                description: body
+            type: object
+      summary: Test function
+      operationId: get_test
+      consumes:
+      - multipart/form-data
+      tags:
+      - default
+      # For AWS Integration
+      x-amazon-apigateway-integration:
+        type: "aws"
+        httpMethod: "POST"
+        # Replace AWS_REGION and ACCOUNT_ID in uri
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:TestFunction/invocations"
+        responses:
+          default:
+            statusCode: 200
+        requestTemplates:
+          application/json: "{\r\n  \"body\" : \"$input.body\"  \r\n}"
+
+produces:
+- application/json
+consumes:
+- application/json
+tags:
+- name: default
+  description: Default namespace
 definitions:
-  ImageObj:
-    type: "object"
+  ObjectDetectionOutput:
+    allOf:
+    - "$ref": "#/definitions/BaseOutput"
+    - properties:
+        label:
+          type: string
+          description: Object detection label for visualization
+      type: object
+  BaseOutput:
     properties:
-      body:
-        type: "string"
+      x1:
+        type: integer
+        description: X1
+        minimum: 0
+      y1:
+        type: integer
+        description: Y1
+        minimum: 0
+      x2:
+        type: integer
+        description: X2
+        minimum: 0
+      y2:
+        type: integer
+        description: Y2
+        minimum: 0
+      class_name:
+        type: string
+        description: Object detection label
+      confidence:
+        type: number
+        description: Object detection confidence score
+        minimum: 0
+        maximum: 1
+    type: object
+  ClassificationOutput:
+    allOf:
+    - "$ref": "#/definitions/BaseOutput"
+    - properties:
+        label:
+          type: string
+          description: Classification label for visualization
+        pred:
+          type: array
+          description: 5 first predictions classes
+          items:
+            type: string
+        prob:
+          type: array
+          description: 5 first prediction probabilities
+          items:
+            type: number
+      type: object
+responses:
+  ParseError:
+    description: When a mask can't be parsed
+  MaskError:
+    description: When any error occurs on mask
