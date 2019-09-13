@@ -95,6 +95,21 @@ layer: layers
 sam_build:
 	sam build
 
+sam_local:
+	sam local start-api
+
+##########
+#  Test  #
+##########
+
+# Curl test
+# curl -X POST -d body@tests/clio4.jpg  http://localhost:3000/post
+
+# Generate event
+# sam local generate-event apigateway aws-proxy --body "" --path "post" --method GET > api-event.json
+# Use event to invoke api
+# sam local invoke  -e api-event.json 
+
 sam_package:
 	sam package --template-file template.yaml --s3-bucket iaflash --output-template-file packaged.yaml
 
