@@ -52,6 +52,10 @@ paths:
         httpMethod: "POST"
         # Replace AWS_REGION and ACCOUNT_ID in uri
         uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:IAFlashFunction/invocations"
+        contentHandling : "CONVERT_TO_TEXT"
+        requestTemplates":
+            application/json: "{\n   \"imageKey\": \"$input.params('key')\", \"image\": \"$input.body\"\n}"
+
         responses:
           default:
             statusCode: 200
@@ -59,8 +63,7 @@ paths:
               method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
               method.response.header.Access-Control-Allow-Methods : "'*'"
               method.response.header.Access-Control-Allow-Origin : "'*'"
-        requestTemplates:
-          application/json: "{\r\n  \"body\" : \"$input.body\"  \r\n}"
+
   "/test":
     get:
       responses:
