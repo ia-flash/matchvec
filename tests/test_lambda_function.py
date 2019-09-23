@@ -4,7 +4,7 @@ import unittest
 import base64
 
 sys.path.append('./matchvec')
-from lambda_function import lambda_handler
+from matchvec.lambda_function import lambda_handler_classification
 
 class TestFileFail(unittest.TestCase):
 
@@ -15,7 +15,7 @@ class TestFileFail(unittest.TestCase):
         event = {
                 'body': img
                 }
-        lambda_handler(event, None)
+        lambda_handler_classification(event, None)
 
 
     #def test_request_prediction(self):

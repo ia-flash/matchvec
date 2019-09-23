@@ -8,7 +8,7 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 40
+    Timeout: 200
     MemorySize: 512
     Environment:
       Variables:
@@ -23,6 +23,7 @@ Resources:
       DefinitionUri: ./swagger.yaml
       BinaryMediaTypes:
          - image~1png
+         - image~1jpeg
   IAFlashFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -34,10 +35,10 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
       Layers:
-          - arn:aws:lambda:eu-west-1:016363657960:layer:onnx-layer-py36:1
-          - arn:aws:lambda:eu-west-1:016363657960:layer:opencv-layer-p36:1
-          - arn:aws:lambda:eu-west-1:016363657960:layer:pandas-layer-p36:1
-          - arn:aws:lambda:eu-west-1:016363657960:layer:pillow-layer-p36:1
+          - arn:aws:lambda:eu-west-1:016363657960:layer:onnx:1
+          - arn:aws:lambda:eu-west-1:016363657960:layer:opencv:1
+          - arn:aws:lambda:eu-west-1:016363657960:layer:pandas:1
+          - arn:aws:lambda:eu-west-1:016363657960:layer:pillow:1
       Events:
         PostEvent:
           Type: Api
@@ -56,10 +57,10 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
       Layers:
-        - arn:aws:lambda:eu-west-1:016363657960:layer:onnx-layer-py36:1
-        - arn:aws:lambda:eu-west-1:016363657960:layer:opencv-layer-p36:1
-        - arn:aws:lambda:eu-west-1:016363657960:layer:pandas-layer-p36:1
-        - arn:aws:lambda:eu-west-1:016363657960:layer:pillow-layer-p36:1
+          - arn:aws:lambda:eu-west-1:016363657960:layer:onnx:1
+          - arn:aws:lambda:eu-west-1:016363657960:layer:opencv:1
+          - arn:aws:lambda:eu-west-1:016363657960:layer:pandas:1
+          - arn:aws:lambda:eu-west-1:016363657960:layer:pillow:1
       Events:
         GetEvent:
           Type: Api

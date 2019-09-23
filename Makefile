@@ -92,6 +92,13 @@ layer: layers
 	cd layers/onnx; zip -r onnx.zip python; cd ../..;
 	cd layers/pillow; zip -r pillow.zip python; cd ../..;
 
+	
+layer_publish:
+	  aws lambda publish-layer-version --layer-name pandas --zip-file fileb://layers/pandas/pandas.zip --compatible-runtimes python3.6
+		aws lambda publish-layer-version --layer-name onnx --zip-file fileb://layers/onnx/onnx.zip --compatible-runtimes python3.6
+		aws lambda publish-layer-version --layer-name opencv --zip-file fileb://layers/opencv/opencv.zip --compatible-runtimes python3.6
+		aws lambda publish-layer-version --layer-name pillow --zip-file fileb://layers/pillow/pillow.zip --compatible-runtimes python3.6
+
 sam_build:
 	sam build
 
@@ -108,7 +115,7 @@ sam_local:
 # Generate event
 # sam local generate-event apigateway aws-proxy --body "" --path "post" --method GET > api-event.json
 # Use event to invoke api
-# sam local invoke  -e api-event.json 
+# sam local invoke  -e api-event.json
 
 sam_package:
 	sam package --template-file template.yaml --s3-bucket iaflash --output-template-file packaged.yaml

@@ -41,21 +41,24 @@ paths:
       consumes:
       - application/json
       - multipart/form-data
+      - image/png
       tags:
       - default
       # For AWS Integration
       x-amazon-apigateway-request-validators:
         basic:
           validateRequestParameters: true
+      x-amazon-apigateway-binary-media-types:
+          - image/png
       x-amazon-apigateway-integration:
         type: "aws"
         httpMethod: "POST"
         # Replace AWS_REGION and ACCOUNT_ID in uri
         uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:IAFlashFunction/invocations"
         contentHandling : "CONVERT_TO_TEXT"
-        requestTemplates":
-            application/json: "{\n   \"imageKey\": \"$input.params('key')\", \"image\": \"$input.body\"\n}"
-
+        passthroughBehavior : "WHEN_NO_TEMPLATES"
+        requestTemplates:
+             image/png: "{\n  \"image\": \"$input.body\"\n}"
         responses:
           default:
             statusCode: 200

@@ -27,8 +27,9 @@ def lambda_handler_classification(event, context):
     print("LISTDIR", listdir('/tmp'))
 
     res = list()
-    body_str = event.get('body', None)
-    body_parsed = json.loads(body_str).get('body', None)
+    body_parsed = event.get('image', None)
+    print(type(body_parsed))
+    #body_parsed = json.loads(body_str).get('body', None)
 
     #c_type, c_data = parse_header(event['headers']['Content-Type'])
     #assert c_type == 'multipart/form-data'
