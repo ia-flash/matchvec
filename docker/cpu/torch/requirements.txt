@@ -10,3 +10,4 @@ sphinx-rtd-theme==0.4.3
 celery==4.3.0
 redis==3.3.6
 boto3==1.9.199
+pytest==5.1.3

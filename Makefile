@@ -72,9 +72,9 @@ docs/html:
 docs: docs/html
 	echo "Post"
 
-test:
+test: build 
 	#$(COMPOSE) exec matchvec python tests/test_process.py
-	$(COMPOSE) exec matchvec python tests/test_lambda_function.py
+	$(COMPOSE) exec matchvec pytest tests/
 
 layers:
 	mkdir -p layers/pandas/python
@@ -92,7 +92,7 @@ layer: layers
 	cd layers/onnx; zip -r onnx.zip python; cd ../..;
 	cd layers/pillow; zip -r pillow.zip python; cd ../..;
 
-	
+
 layer_publish:
 	  aws lambda publish-layer-version --layer-name pandas --zip-file fileb://layers/pandas/pandas.zip --compatible-runtimes python3.6
 		aws lambda publish-layer-version --layer-name onnx --zip-file fileb://layers/onnx/onnx.zip --compatible-runtimes python3.6

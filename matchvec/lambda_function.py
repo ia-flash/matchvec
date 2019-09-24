@@ -5,9 +5,10 @@ import cv2
 import onnxruntime
 from PIL import Image
 import base64
-from cgi import parse_header, parse_multipart
-from io import BytesIO
-from process import predict_class, predict_objects
+from matchvec.process import predict_class, predict_objects
+
+#from cgi import parse_header, parse_multipart
+#from io import BytesIO
 
 def lambda_handler(event, context):
     print("ENV", getenv('BACKEND'))
@@ -27,21 +28,19 @@ def lambda_handler_classification(event, context):
     print("LISTDIR", listdir('/tmp'))
 
     res = list()
-    body_parsed = event.get('image', None)
-    print(type(body_parsed))
-    #body_parsed = json.loads(body_str).get('body', None)
+    body_str = event.get('image', None)
 
     #c_type, c_data = parse_header(event['headers']['Content-Type'])
     #assert c_type == 'multipart/form-data'
     #decoded_string = base64.b64decode(event['body'])
     #form_data = parse_multipart(BytesIO(decoded_string), c_data)
 
-    if body_parsed:
-        print(type(body_parsed))
-        print(body_parsed[:100])
+    if body_str:
+        print(type(body_str))
+        print(body_str[:100])
 
         #  read encoded image
-        imageString = base64.b64decode(body_parsed)
+        imageString = base64.b64decode(body_str)
         #  convert binary data to numpy array
         nparr = np.frombuffer(imageString, np.uint8)
         #  let opencv decode image to correct format
@@ -52,4 +51,4 @@ def lambda_handler_classification(event, context):
     return {
         'statusCode': 200,
         'body': json.dumps(res)
-    }
+        }

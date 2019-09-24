@@ -5,7 +5,7 @@ import json
 import numpy as np
 import pandas as pd
 from matchvec.utils import timeit
-from BaseModel import BaseModel
+from matchvec.BaseModel import BaseModel
 
 # DETECTION_MODEL = 'faster_rcnn_resnet101_coco_2018_01_28/'
 DETECTION_MODEL = 'ssd_mobilenet_v2_coco_2018_03_29/'

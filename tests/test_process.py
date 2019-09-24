@@ -1,77 +1,35 @@
 import sys, os
 import cv2
-import unittest
 
-sys.path.append('./matchvec')
-from app import app
-from process import predict_class, predict_objects
+from matchvec.process import predict_class, predict_objects
 from importlib import import_module
-Classifier = import_module('classification_' + os.getenv('BACKEND')).Classifier
-
-class TestFileFail(unittest.TestCase):
-
-    def test_apidoc(self):
-        with app.test_client() as c:
-            print("Testing doc")
-            response = c.get('/matchvec/docs')
-            self.assertEqual('308 PERMANENT REDIRECT', response.status)
-
-    def test_class(self):
-        img = cv2.imread('tests/clio4.jpg') # BGR
-        img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
-
-        print('Testing image', img.shape)
-        res = predict_class(img)
-
-        self.assertIsInstance(res, list)
-        assert any(['CLIO' in vehicule['label'] for vehicule in res]), 'There is no clio in first predictions'
-
-    def test_object(self):
-        img = cv2.imread('tests/clio4.jpg')
-        img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
-        print('Testing image', img.shape)
-        res = predict_objects(img)
-        self.assertIsInstance(res, list)
+Classifier = import_module('matchvec.classification_' + os.getenv('BACKEND')).Classifier
 
 
-    def test_export_classification_model(self):
-        classifier = Classifier()
-        classifier.export_model()
+def test_apidoc(app):
+    with app.test_client() as c:
+        print("Testing doc")
+        response = c.get('/matchvec/docs')
+        assert response.status == '308 PERMANENT REDIRECT'
 
-    # TODO: add assert
-    def test_app(self):
-        url = 'http://matchvec:5000/api/object_detection'
-        # url = 'http://matchvec:5000/api/predict'
-        files = {'image': open('clio-punto-megane.jpg', 'rb')}
-        res = requests.post(url, files=files)
-        logger.debug(res.text)
+def test_class(img_clio4):
 
-    # TODO: add assert
-    def test_app_multiple(self):
-        url = 'http://matchvec:5000/api/object_detection'
-        files = [
-                ('image', open('clio-peugeot.jpg', 'rb')),
-                ('image', open('cliomegane.jpg', 'rb'))
-                ]
-        res = requests.post(url, files=files)
-        logger.debug(res.text)
+    print('Testing image', img_clio4.shape)
+    res = predict_class(img_clio4)
 
+    assert type(res) == list
+    assert any(['CLIO' in vehicule['label'] for vehicule in res]), 'There is no clio in first predictions'
 
-    #def test_request_prediction(self):
-    #    with app.test_client() as c:
-    #        #files = [
-    #        #        ('image', open('tests/clio-peugeot.jpg', 'rb')),
-    #        #        ]
-    #        files = {'image': open('tests/clio-peugeot.jpg', 'rb')}
-    #        resp = c.post(
-    #            '/predict',
-    #            #content_type='multipart/form-data',
-    #            data=files
-    #        )
-    #        self.assertEqual(
-    #            '200 OK',
-    #            resp.status,
-    #            )
+def test_object(img_clio4):
+
+    res = predict_objects(img_clio4)
+    assert type(res) == list
+
+"""
+def test_export_classification_model():
+    classifier = Classifier()
+    classifier.export_model()
+"""
 
 if __name__ == '__main__':
     #unittest.main()

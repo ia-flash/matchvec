@@ -7,6 +7,7 @@ from flask import Flask, send_from_directory, request, Blueprint, url_for
 from flask_restplus import Resource, Api, reqparse, fields
 from matchvec.process import predict_class, predict_objects
 from werkzeug.datastructures import FileStorage
+from werkzeug.exceptions import abort
 from urllib.request import urlopen
 from matchvec.utils import logger
 from celery import Celery
@@ -294,7 +295,8 @@ class ClassPrediction(Resource):
         """
         images = request.files.getlist('image')
         url = request.form.get('url', None)
-
+        print(images)
+        print(url)
         res = list()
         if url:
             try:
@@ -307,11 +309,16 @@ class ClassPrediction(Resource):
                 print(url)
                 print(e)
         if images:
+            print(range(len(images)))
             for i in range(len(images)):
+                print(images[i])
                 nparr = np.frombuffer(images[i].read(), np.uint8)
+                print(nparr)
                 img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
                 res.append(predict_class(img))
+        else:
+             abort(403)
         return res
 
 
