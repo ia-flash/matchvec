@@ -1,0 +1,162 @@
+swagger: "2.0"
+info:
+  description: "Use this API to obtain the make and model of an vehicule image."
+  version: "1.0.0"
+  title: "IA Flash API"
+host: "iaflash.fr"
+basePath: "/v1"
+schemes:
+- "https"
+paths:
+  "/predict":
+    post:
+      responses:
+        '200':
+          description: Result is a list of the following element (double list)
+          headers:
+            Access-Control-Allow-Headers:
+              type: "string"
+            Access-Control-Allow-Methods:
+              type: "string"
+            Access-Control-Allow-Origin:
+              type: "string"
+          schema:
+            type: array
+            items:
+              "$ref": "#/definitions/ClassificationOutput"
+      summary: Brand and model classifcation
+      description: |-
+        Image can be loaded either by using an internet URL in the url field or
+        by using a local stored image in the image field
+      operationId: post_class_prediction
+      parameters:
+      - name: url
+        in: formData
+        type: string
+        description: Image URL in jpg format. URL must end with jpg.
+      - name: image
+        in: formData
+        type: file
+        description: Image saved locally. Multiple images are allowed.
+      consumes:
+      - application/json
+      - multipart/form-data
+      - image/png
+      tags:
+      - default
+      # For AWS Integration
+      x-amazon-apigateway-request-validators:
+        basic:
+          validateRequestParameters: true
+      x-amazon-apigateway-binary-media-types:
+          - image/png
+      x-amazon-apigateway-integration:
+        type: "aws"
+        httpMethod: "POST"
+        # Replace AWS_REGION and ACCOUNT_ID in uri
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:IAFlashFunction/invocations"
+        contentHandling : "CONVERT_TO_TEXT"
+        passthroughBehavior : "WHEN_NO_TEMPLATES"
+        requestTemplates:
+             image/png: "{\n  \"image\": \"$input.body\"\n}"
+        responses:
+          default:
+            statusCode: 200
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers : "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods : "'*'"
+              method.response.header.Access-Control-Allow-Origin : "'*'"
+
+  "/test":
+    get:
+      responses:
+        '200':
+          description: Result is a list of the following element (double list)
+          schema:
+            properties:
+              body:
+                type: string
+                description: body
+            type: object
+      summary: Test function
+      operationId: get_test
+      tags:
+      - default
+      # For AWS Integration
+      x-amazon-apigateway-integration:
+        type: "aws"
+        httpMethod: "POST"
+        # Replace AWS_REGION and ACCOUNT_ID in uri
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:TestFunction/invocations"
+        responses:
+          default:
+            statusCode: 200
+        requestTemplates:
+          application/json: "{\r\n  \"body\" : \"$input.body\"  \r\n}"
+
+produces:
+- application/json
+consumes:
+- application/json
+tags:
+- name: default
+  description: Default namespace
+definitions:
+  ObjectDetectionOutput:
+    allOf:
+    - "$ref": "#/definitions/BaseOutput"
+    - properties:
+        label:
+          type: string
+          description: Object detection label for visualization
+      type: object
+  BaseOutput:
+    properties:
+      x1:
+        type: integer
+        description: X1
+        minimum: 0
+      y1:
+        type: integer
+        description: Y1
+        minimum: 0
+      x2:
+        type: integer
+        description: X2
+        minimum: 0
+      y2:
+        type: integer
+        description: Y2
+        minimum: 0
+      class_name:
+        type: string
+        description: Object detection label
+      confidence:
+        type: number
+        description: Object detection confidence score
+        minimum: 0
+        maximum: 1
+    type: object
+  ClassificationOutput:
+    allOf:
+    - "$ref": "#/definitions/BaseOutput"
+    - properties:
+        label:
+          type: string
+          description: Classification label for visualization
+        pred:
+          type: array
+          description: 5 first predictions classes
+          items:
+            type: string
+        prob:
+          type: array
+          description: 5 first prediction probabilities
+          items:
+            type: number
+      type: object
+responses:
+  ParseError:
+    description: When a mask can't be parsed
+  MaskError:
+    description: When any error occurs on mask

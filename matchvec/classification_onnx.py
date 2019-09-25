@@ -6,6 +6,8 @@ from typing import List, Tuple
 from matchvec.utils import timeit
 import onnxruntime
 from PIL import Image
+from matchvec.utils import timeit
+from matchvec.BaseModel import BaseModel
 
 
 CLASSIFICATION_MODEL = os.getenv('CLASSIFICATION_MODEL')
@@ -23,7 +25,7 @@ def softmax(x):
     return e_x / np.expand_dims(e_x.sum(axis=1), axis=1)
 
 
-class Classifier(object):
+class Classifier(BaseModel):
     """Classifier for marque et modèle
 
     Classifies images using a pretrained model.
@@ -31,10 +33,14 @@ class Classifier(object):
 
     @timeit
     def __init__(self):
-        self.session = onnxruntime.InferenceSession(
-                os.path.join(
-                    '/model', CLASSIFICATION_MODEL, "classifcation_model.onnx"
-                    ))
+        self.files = ['classifcation_model.onnx', 'idx_to_class.json']
+        dst_path = os.path.join(
+            os.environ['BASE_MODEL_PATH'], CLASSIFICATION_MODEL)
+        src_path = os.path.join('model', CLASSIFICATION_MODEL)
+
+        self.download_model_folder(dst_path, src_path)
+
+        self.session = onnxruntime.InferenceSession(os.path.join(dst_path, "classifcation_model.onnx"))
         self.output_name = self.session.get_outputs()[0].name
         self.input_name = self.session.get_inputs()[0].name
 
@@ -78,6 +84,6 @@ class Classifier(object):
         prob = np.max(norm_output, axis=1)
 
         final_pred = list([[all_categories[str(i)]] for i in pred])
-        final_prob = list([[i] for i in prob])
+        final_prob = list([[float(i)] for i in prob])
 
         return final_pred, final_prob

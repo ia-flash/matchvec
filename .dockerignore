@@ -1,0 +1,6 @@
+.git
+tests
+.pytest_cache
+layers
+docs
+model

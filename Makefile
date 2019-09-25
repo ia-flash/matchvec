@@ -72,5 +72,53 @@ docs/html:
 docs: docs/html
 	echo "Post"
 
-test:
-	$(COMPOSE) exec matchvec python tests/test_process.py
+test: build 
+	#$(COMPOSE) exec matchvec python tests/test_process.py
+	$(COMPOSE) exec matchvec pytest tests/
+
+layers:
+	mkdir -p layers/pandas/python
+	mkdir -p layers/opencv/python
+	mkdir -p layers/onnx/python
+	mkdir -p layers/pillow/python
+
+layer: layers
+	$(COMPOSE) exec matchvec pip3 install pandas==0.24.2 -t layers/pandas/python
+	$(COMPOSE) exec matchvec pip3 install opencv-python-headless==4.0.0.21 -t layers/opencv/python
+	$(COMPOSE) exec matchvec pip3 install onnx==1.5.0 onnxruntime==0.4.0 -t layers/onnx/python
+	$(COMPOSE) exec matchvec pip3 install Pillow==6.1.0 -t layers/pillow/python
+	cd layers/pandas; zip -r pandas.zip python; cd ../..;
+	cd layers/opencv; zip -r opencv.zip python; cd ../..;
+	cd layers/onnx; zip -r onnx.zip python; cd ../..;
+	cd layers/pillow; zip -r pillow.zip python; cd ../..;
+
+
+layer_publish:
+	  aws lambda publish-layer-version --layer-name pandas --zip-file fileb://layers/pandas/pandas.zip --compatible-runtimes python3.6
+		aws lambda publish-layer-version --layer-name onnx --zip-file fileb://layers/onnx/onnx.zip --compatible-runtimes python3.6
+		aws lambda publish-layer-version --layer-name opencv --zip-file fileb://layers/opencv/opencv.zip --compatible-runtimes python3.6
+		aws lambda publish-layer-version --layer-name pillow --zip-file fileb://layers/pillow/pillow.zip --compatible-runtimes python3.6
+
+sam_build:
+	sam build
+
+sam_local:
+	sam local start-api
+
+##########
+#  Test  #
+##########
+
+# Curl test
+# curl -X POST -d body@tests/clio4.jpg  http://localhost:3000/post
+
+# Generate event
+# sam local generate-event apigateway aws-proxy --body "" --path "post" --method GET > api-event.json
+# Use event to invoke api
+# sam local invoke  -e api-event.json
+
+sam_package:
+	sam package --template-file template.yaml --s3-bucket iaflash --output-template-file packaged.yaml
+
+sam_deploy:
+	aws cloudformation deploy --template-file packaged.yaml --stack-name aws-iaflash
