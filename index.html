@@ -1,0 +1,276 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Welcome to IAFlash’s documentation! &mdash; IAFlash  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home"> IAFlash
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Welcome to IAFlash’s documentation!</a></li>
+<li><a class="reference internal" href="#contents">Contents</a><ul>
+<li><a class="reference internal" href="#main-app">Main app</a></li>
+<li><a class="reference internal" href="#process-function">Process function</a></li>
+<li><a class="reference internal" href="#classification-model">Classification model</a></li>
+<li><a class="reference internal" href="#detection-avec-ssd">Detection avec SSD</a></li>
+<li><a class="reference internal" href="#detection-avec-yolo">Detection avec Yolo</a></li>
+<li><a class="reference internal" href="#module-utils">Other functions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">IAFlash</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Welcome to IAFlash’s documentation!</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="welcome-to-iaflash-s-documentation">
+<h1>Welcome to IAFlash’s documentation!<a class="headerlink" href="#welcome-to-iaflash-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>├── docker                                 &lt;- Docker configuration files
+│   ├── conf.list
+│   ├── conf.list.sample
+│   ├── cpu
+│   ├── env.list
+│   ├── env.list.sample
+│   └── gpu
+├── docker-compose-gpu.yml
+├── docker-compose.yml
+├── docker-restart.yml
+├── docs                                   &lt;- Sphinx documentation folder
+│   ├── build
+│   ├── make.bat
+│   ├── Makefile
+│   └── source
+├── Makefile                               &lt;- Orchestring commands
+├── matchvec                               &lt;- Python application folder
+│   ├── app.py
+│   ├── classification.py
+│   ├── __init__.py
+│   ├── process.py
+│   ├── retina_detection.py
+│   ├── ssd_detection.py
+│   ├── utils.py
+│   └── yolo_detection.py
+├── model                                  &lt;- Folder for models
+│   ├── resnet18-100
+│   ├── ssd_mobilenet_v2_coco_2018_03_29
+│   └── yolo
+├── README.md                              &lt;- Top-level README for developers using this project
+└── tests                                  &lt;- Unit test scripts
+    ├── clio-peugeot.jpg
+    └── test_process.py
+</pre></div>
+</div>
+</div>
+<div class="section" id="contents">
+<h1>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h1>
+<p>Application modules</p>
+<div class="section" id="main-app">
+<h2>Main app<a class="headerlink" href="#main-app" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="process-function">
+<h2>Process function<a class="headerlink" href="#process-function" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="classification-model">
+<h2>Classification model<a class="headerlink" href="#classification-model" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="detection-avec-ssd">
+<h2>Detection avec SSD<a class="headerlink" href="#detection-avec-ssd" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="detection-avec-yolo">
+<h2>Detection avec Yolo<a class="headerlink" href="#detection-avec-yolo" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-utils">
+<span id="other-functions"></span><h2>Other functions<a class="headerlink" href="#module-utils" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for logging.</p>
+<dl class="function">
+<dt id="utils.timeit">
+<code class="descclassname">utils.</code><code class="descname">timeit</code><span class="sig-paren">(</span><em>method</em><span class="sig-paren">)</span><a class="headerlink" href="#utils.timeit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator to log spended time</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Cristian Perez
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
