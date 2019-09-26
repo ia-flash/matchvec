@@ -13,7 +13,7 @@ from matchvec.BaseModel import BaseModel
 CLASSIFICATION_MODEL = os.getenv('CLASSIFICATION_MODEL')
 
 # Get label
-filename = os.path.join('/model', CLASSIFICATION_MODEL,  'idx_to_class.json')
+filename = os.path.join(os.environ['BASE_MODEL_PATH'], CLASSIFICATION_MODEL,  'idx_to_class.json')
 with open(filename) as json_data:
     all_categories = json.load(json_data)
     CLASS_NUMBER = len(all_categories)

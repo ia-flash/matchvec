@@ -13,7 +13,7 @@ NMS_THRESHOLD = 0.4  # Non Maximum Supression threshold
 SWAPRB = False
 SCALE = 0.00392  # 1/255
 
-with open(os.path.join('/model', DETECTION_MODEL, 'labels.json')) as json_data:
+with open(os.path.join(os.environ['BASE_MODEL_PATH'], DETECTION_MODEL, 'labels.json')) as json_data:
     CLASS_NAMES = json.load(json_data)
 
 
@@ -61,8 +61,8 @@ class Detector():
     @timeit
     def __init__(self):
         self.model = cv2.dnn.readNetFromDarknet(
-                os.path.join('/model', DETECTION_MODEL, 'yolov3.cfg'),
-                os.path.join('/model', DETECTION_MODEL, 'yolov3.weights')
+                os.path.join(os.environ['BASE_MODEL_PATH'], DETECTION_MODEL, 'yolov3.cfg'),
+                os.path.join(os.environ['BASE_MODEL_PATH'], DETECTION_MODEL, 'yolov3.weights')
                 )
 
     def prediction(self, image: np.ndarray) -> List[np.ndarray]:
