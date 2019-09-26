@@ -1,6 +1,4 @@
-import sys, os
-import cv2
-
+import os
 from matchvec.process import predict_class, predict_objects
 from importlib import import_module
 Classifier = import_module('matchvec.classification_' + os.getenv('BACKEND')).Classifier
@@ -12,6 +10,7 @@ def test_apidoc(app):
         response = c.get('/matchvec/docs')
         assert response.status == '308 PERMANENT REDIRECT'
 
+
 def test_class(img_clio4):
 
     print('Testing image', img_clio4.shape)
@@ -20,18 +19,7 @@ def test_class(img_clio4):
     assert type(res) == list
     assert any(['CLIO' in vehicule['label'] for vehicule in res]), 'There is no clio in first predictions'
 
-def test_object(img_clio4):
 
+def test_object(img_clio4):
     res = predict_objects(img_clio4)
     assert type(res) == list
-
-"""
-def test_export_classification_model():
-    classifier = Classifier()
-    classifier.export_model()
-"""
-
-if __name__ == '__main__':
-    #unittest.main()
-    tf = TestFileFail()
-    tf.test_class()

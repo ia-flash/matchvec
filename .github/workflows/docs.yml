@@ -1,10 +1,11 @@
-name: Python tests
+---
+name: Publish documentation
 
 on: [push]
 
 jobs:
   build:
-    name: Python test
+    name: Publish documentation
 
     runs-on: ubuntu-latest
 
@@ -24,32 +25,35 @@ jobs:
         with:
           args:
         env:
-          DEST_DIR: './model/resnet18-151'
+          DEST_DIR: './docs/model/resnet18-151'
           AWS_REGION: 'eu-west-1'
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - name: Download ssd model
+      - name: Download ssd
         uses: ia-flash/s3-download-action@master
         with:
           args:
         env:
-          DEST_DIR: './model/ssd_mobilenet_v2_coco_2018_03_29'
+          DEST_DIR: './docs/model/ssd_mobilenet_v2_coco_2018_03_29'
           AWS_REGION: 'eu-west-1'
           AWS_S3_BUCKET: 'iaflash/model/ssd_mobilenet_v2_coco_2018_03_29'
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - name: Lint with flake8
+      - name: Download yolo
+        uses: ia-flash/s3-download-action@master
+        with:
+          args:
+        env:
+          DEST_DIR: './docs/model/yolo'
+          AWS_REGION: 'eu-west-1'
+          AWS_S3_BUCKET: 'iaflash/model/yolo'
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Build documentation
         run: |
-          pip install flake8
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      - name: Test with pytest
-        run: |
-          pip install pytest
-          pytest tests/
+          make -C ./docs html
+          touch ./docs/build/html/.nojekyll
         env:
           BASE_MODEL_PATH: './model'
           TORCH_HOME: './model'
@@ -58,4 +62,10 @@ jobs:
           DETECTION_MODEL: ssd
           DETECTION_THRESHOLD: 0.4
           BACKEND: 'onnx'
-
+      - name: deploy
+        uses: docker://peaceiris/gh-pages:v2.3.2
+        if: success() && github.ref == 'master'
+        env:
+          ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: ./docs/build/html
