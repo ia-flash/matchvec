@@ -1,49 +1,44 @@
-# matchvec
+# MatchVec [![Software License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fia-flash%2Fmatchvec%2Fbadge%3Fref%3Dmaster&style=flat)](https://actions-badge.atrox.dev/ia-flash/matchvec/goto?ref=master)
 
 Retourne le marque/modèle d'un véhicule à partir d'un cliché, parmi 100 classes fréquentes dans le parc automobile francais.
 
+Obtains the make and model of a vehicle image from the most frequent cars in France.
+
 ## Installation
 
-Replace environment file for docker image
+Build docker images
 
 ```
-mv docker/env.list.sample docker/env.list
+make build
 ```
 
-## Contents
+Launch dockers
 
 ```
-├── docker                                 <- Docker configuration files
-│   ├── conf.list
-│   ├── conf.list.sample
-│   ├── cpu
-│   ├── env.list
-│   ├── env.list.sample
-│   └── gpu
-├── docker-compose-gpu.yml
-├── docker-compose.yml
-├── docker-restart.yml
-├── docs                                   <- Sphinx documentation folder
-│   ├── build
-│   ├── make.bat
-│   ├── Makefile
-│   └── source
-├── Makefile                               <- Orchestring commands
-├── matchvec                               <- Python application folder
-│   ├── app.py
-│   ├── classification.py
-│   ├── __init__.py
-│   ├── process.py
-│   ├── retina_detection.py
-│   ├── ssd_detection.py
-│   ├── utils.py
-│   └── yolo_detection.py
-├── model                                  <- Folder for models
-│   ├── resnet18-100
-│   ├── ssd_mobilenet_v2_coco_2018_03_29
-│   └── yolo
-├── README.md                              <- Top-level README for developers using this project
-└── tests                                  <- Unit test scripts
-    ├── clio-peugeot.jpg
-    └── test_process.py
+make up
 ```
+
+Launch celery worker 
+
+```
+make celery
+```
+
+# [Documentation](https://ia-flash.github.io/matchvec/)
+
+Documentation is automatically generated using [Github actions](https://github.com/ia-flash/matchvec/actions) and deployed using [Github pages](https://github.com/ia-flash/matchvec/deployments).
+
+# Utilisation
+
+See [iaflash.fr/testapi/matchvec](https://iaflash.fr/testapi/matchvec)
+
+# Test
+
+`make test`
+
+
+# License
+
+Source code has been published using [Apache 2.0 license](LICENSE).
+
+© 2019 Agence Nationale de Traitement Automatisé des Infractions (ANTAI), Victor Journé, Cristian Brokate
