@@ -6,6 +6,7 @@ import base64
 
 path_clio4 = "tests/clio4.jpg"
 path_bmw = "tests/bmw.png"
+url_clio3 = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Renault_Clio_III_20090527_front.JPG/800px-Renault_Clio_III_20090527_front.JPG"
 
 @pytest.fixture
 def app():
@@ -22,6 +23,10 @@ def file_clio4():
         return data
 
     yield _file_clio4
+
+@pytest.fixture
+def url_clio():
+    yield url_clio3
 
 @pytest.fixture
 def img_clio4():
@@ -41,8 +46,8 @@ def apigateway_event():
 
     mp_encoder = MultipartEncoder(
         fields={'image': ('filename',open(path_bmw, "rb"),'image/png'),
-                'url' : "https://upload.wikimedia.org/wikipedia/commons/3/31/Renault_Clio_front_20080116.jpg"
-    })
+                'url' : url_clio3
+                })
     body = mp_encoder.to_string()
     print('form-data is :')
     print(body[:100])

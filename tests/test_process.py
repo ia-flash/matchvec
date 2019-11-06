@@ -20,6 +20,7 @@ def test_class(img_clio4):
     assert any(['CLIO' in vehicule['label'] for vehicule in res]), 'There is no clio in first predictions'
 
 
+
 def test_object(img_clio4):
     res = predict_objects(img_clio4)
     assert type(res) == list

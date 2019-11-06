@@ -324,8 +324,7 @@ class ClassPrediction(Resource):
                 except Exception as e:
                     print(e)
                     res.append([])
-        else:
-             abort(403)
+
         return res
 
 

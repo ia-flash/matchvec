@@ -17,6 +17,7 @@ def test_handler(apigateway_event):
     resp = lambda_handler_classification(apigateway_event, None)
     body = resp['body']
     assert resp['statusCode'] == 200
+    print(body)
     assert any(['CLIO' in vehicule['label'] for vehicule in eval(body)[0] + eval(body)[1]]), 'There is no clio in predictions %s'%body
     assert any(['BMW SERIE 5' in vehicule['label'] for vehicule in eval(body)[0] + eval(body)[1]]), 'There is no bmw in predictions %s'%body
 
