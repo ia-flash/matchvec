@@ -9,3 +9,5 @@ celery.pid
 celeryd.pid
 .aws-sam
 packaged.yaml
+sam*
+aws_lambda/matchvec

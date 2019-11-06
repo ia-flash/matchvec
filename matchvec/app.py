@@ -272,12 +272,18 @@ class ObjectDetection(Resource):
             except Exception as e:
                 print(url)
                 print(e)
+                res.append([])
+
         if images:
             for i in range(len(images)):
-                nparr = np.frombuffer(images[i].read(), np.uint8)
-                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
-                res.append(predict_objects(img))
+                try :
+                    nparr = np.frombuffer(images[i].read(), np.uint8)
+                    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
+                    res.append(predict_objects(img))
+                except Exception as e:
+                    print(e)
+                    res.append([])
         return res
 
 
@@ -306,12 +312,18 @@ class ClassPrediction(Resource):
             except Exception as e:
                 print(url)
                 print(e)
+                res.append([])
+
         if images:
             for i in range(len(images)):
-                nparr = np.frombuffer(images[i].read(), np.uint8)
-                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
-                res.append(predict_class(img))
+                try:
+                    nparr = np.frombuffer(images[i].read(), np.uint8)
+                    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
+                    res.append(predict_class(img))
+                except Exception as e:
+                    print(e)
+                    res.append([])
         else:
              abort(403)
         return res

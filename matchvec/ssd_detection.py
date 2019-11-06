@@ -12,10 +12,6 @@ DETECTION_MODEL = 'ssd_mobilenet_v2_coco_2018_03_29/'
 DETECTION_THRESHOLD = float(os.getenv('DETECTION_THRESHOLD'))
 SWAPRB = False
 
-with open(os.path.join(os.environ['BASE_MODEL_PATH'], DETECTION_MODEL, 'labels.json')) as json_data:
-    CLASS_NAMES = json.load(json_data)
-
-
 class Detector(BaseModel):
     """SSD Mobilenet object detection
 
@@ -37,6 +33,10 @@ class Detector(BaseModel):
                 os.path.join(dst_path, 'frozen_inference_graph.pb'),
                 os.path.join(dst_path, 'config.pbtxt')
         )
+
+        with open(os.path.join(dst_path, 'labels.json')) as json_data:
+            self.class_name = json.load(json_data)
+
 
     def prediction(self, image: np.ndarray) -> np.ndarray:
         """Inference
@@ -77,7 +77,7 @@ class Detector(BaseModel):
                 x2=lambda x: (x['x2'] * width).astype(int),
                 y2=lambda x: (x['y2'] * height).astype(int),
                 class_name=lambda x: (
-                    x['class_id'].astype(int).astype(str).replace(CLASS_NAMES)),
+                    x['class_id'].astype(int).astype(str).replace(self.class_name)),
                 label=lambda x: (
                     x.class_name + ': ' + (
                         x['confidence'].astype(str).str.slice(stop=4)

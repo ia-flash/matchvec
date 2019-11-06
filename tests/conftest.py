@@ -1,8 +1,11 @@
 import pytest
 import base64
 import cv2
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+import base64
 
 path_clio4 = "tests/clio4.jpg"
+path_bmw = "tests/bmw.png"
 
 @pytest.fixture
 def app():
@@ -27,11 +30,29 @@ def img_clio4():
     yield img
 
 @pytest.fixture
-def event_clio4():
-    with open(path_clio4, "rb") as imageFile:
-        img = base64.b64encode(imageFile.read())
-    event = {
-            'image': img
-            }
+def apigateway_event():
+
+    """
+    mp_encoder = MultipartEncoder(
+        fields={'field0': open("tests/binary1.dat", "rb"),
+            'field1': open("tests/binary2.dat", "rb")}
+    )
+    """
+
+    mp_encoder = MultipartEncoder(
+        fields={'image': ('filename',open(path_bmw, "rb"),'image/png'),
+                'url' : "https://upload.wikimedia.org/wikipedia/commons/3/31/Renault_Clio_front_20080116.jpg"
+    })
+    body = mp_encoder.to_string()
+    print('form-data is :')
+    print(body[:100])
+    body = base64.b64encode(body)
+    print('It is encoded in base64')
+
+    event = dict(httpMethod = 'POST',
+                 path = '/predict',
+                 headers = {'content-type': mp_encoder.content_type},
+                 body = body)
+
 
     yield event

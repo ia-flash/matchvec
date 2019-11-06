@@ -4,3 +4,6 @@ tests
 layers
 docs
 model
+sam*
+aws*
+.*
