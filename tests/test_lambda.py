@@ -17,8 +17,8 @@ def test_handler(apigateway_event):
     resp = lambda_handler_classification(apigateway_event, None)
     body = resp['body']
     assert resp['statusCode'] == 200
-    assert any(['CLIO' in vehicule['label'] for vehicule in eval(body)[1]]), 'There is no clio in first predictions'
-    assert any(['BMW SERIE 5' in vehicule['label'] for vehicule in eval(body)[0]]), 'There is no bmw in first predictions'
+    assert any(['CLIO' in vehicule['label'] for vehicule in eval(body)[0] + eval(body)[1]]), 'There is no clio in first predictions'
+    assert any(['BMW SERIE 5' in vehicule['label'] for vehicule in eval(body)[0] + eval(body)[1]]), 'There is no bmw in first predictions'
 
 if __name__ == '__main__':
     mp_encoder = MultipartEncoder(
