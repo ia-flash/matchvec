@@ -37,6 +37,3 @@ def test_predict_url(app, url_clio):
     # Test with an image
     resp_data = eval(resp.get_data(as_text=True))
     assert_clio(resp_data)
-
-if __name__ == '__main__':
-    test_predict()

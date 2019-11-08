@@ -78,6 +78,11 @@ def lambda_handler_classification(event, context):
                     print('Bad field name in form-data')
 
     return {
-        'statusCode': 200,
-        'body': json.dumps(res)
-        }
+            'headers': {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Methods": "OPTIONS,POST"
+                },
+            'statusCode': 200,
+            'body': json.dumps(res)
+            }
