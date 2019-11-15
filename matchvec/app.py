@@ -7,7 +7,6 @@ from flask import Flask, send_from_directory, request, Blueprint, url_for
 from flask_restplus import Resource, Api, reqparse, fields
 from matchvec.process import predict_class, predict_objects, predict_anonym
 from werkzeug.datastructures import FileStorage
-from werkzeug.exceptions import abort
 from urllib.request import urlopen
 from matchvec.utils import logger
 from celery import Celery
@@ -362,8 +361,6 @@ class AnonymPrediction(Resource):
                 df = predict_anonym(img)
                 if df is not None:
                     res.append(df)
-        else:
-             abort(403)
         return res
 
 
