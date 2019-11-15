@@ -28,10 +28,7 @@ COPY ./docker/gpu/torch/requirements.txt /workspace
 RUN pip3 install cython
 RUN pip3 install -r /workspace/requirements.txt
 
-RUN git clone https://github.com/open-mmlab/mmdetection.git mmdetection
-RUN cd /workspace/mmdetection && \
-    git reset --hard 6050186056dcf8f50cc8115a22bfeb1fa5b56063
-
+RUN git clone --single-branch --branch dev https://github.com/ia-flash/mmdetection.git mmdetection
 RUN cd /workspace/mmdetection && \
     PYTHON=python3 bash ./compile.sh && \
     pip3 install -e . && \

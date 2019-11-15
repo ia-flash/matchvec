@@ -5,7 +5,7 @@ import base64
 import numpy as np
 from flask import Flask, send_from_directory, request, Blueprint, url_for
 from flask_restplus import Resource, Api, reqparse, fields
-from matchvec.process import predict_class, predict_objects
+from matchvec.process import predict_class, predict_objects, predict_anonym
 from werkzeug.datastructures import FileStorage
 from werkzeug.exceptions import abort
 from urllib.request import urlopen
@@ -326,6 +326,46 @@ class ClassPrediction(Resource):
                     res.append([])
 
         return res
+
+
+@api.route('/anonym', doc=False)
+class AnonymPrediction(Resource):
+    """Image anonymisation"""
+
+    @api.expect(parser)
+    def post(self):
+        """Anonymisatioin
+
+        Image can be loaded either by using an internet URL in the url field or
+        by using a local stored image in the image field
+        """
+        images = request.files.getlist('image')
+        url = request.form.get('url', None)
+        res = list()
+        if url:
+            try:
+                resp = urlopen(url)
+                img = np.asarray(bytearray(resp.read()), dtype="uint8")
+                img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+                img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
+                df = predict_anonym(img)
+                if df is not None:
+                    res.append(df)
+            except Exception as e:
+                print(url)
+                print(e)
+        if images:
+            for i in range(len(images)):
+                nparr = np.frombuffer(images[i].read(), np.uint8)
+                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
+                df = predict_anonym(img)
+                if df is not None:
+                    res.append(df)
+        else:
+             abort(403)
+        return res
+
 
 
 if __name__ == '__main__':

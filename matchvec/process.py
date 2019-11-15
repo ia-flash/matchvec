@@ -17,6 +17,9 @@ detector = Detector()
 Classifier = import_module('matchvec.' + 'classification_' + os.getenv('BACKEND')).Classifier
 classifier = Classifier()
 
+if os.environ['BACKEND'] == 'torch':
+    Detector_Anonym = import_module('matchvec.' + 'anonym' + '_detection').Detector
+    detector_anonym = Detector_Anonym()
 
 level = logging.DEBUG
 logging.basicConfig(
@@ -177,12 +180,32 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
         return list()
 
 
+@timeit
+def predict_anonym(img: np.ndarray) -> List[Union[str, float]]:
+    """Take an image and return sensible parts
+
+    Args:
+        img: Image to make inference
+
+    Returns:
+        result: Predictions
+    """
+    result = detector_anonym.prediction(img)
+    df = detector_anonym.create_df(result, img)
+    df = detector_anonym.detect_band(df, img)
+    if len(df) > 0:
+        cols = ['x1', 'y1', 'x2', 'y2', 'class_name', 'confidence', 'label']
+        return df[cols].to_dict(orient='records')
+    else:
+        return None
+
 if __name__ == '__main__':
-    img = cv2.imread('clio-punto-megane.jpg')
+    img = cv2.imread('tests/clio-peugeot.jpg')
     #img = cv2.imread('image.jpg')
     print(img.shape)
     #res = predict_objects(img)
-    res = predict_class(img)
+    #res = predict_class(img)
+    res = predict_anonym(img)
     print(res)
     #test_app()
     #test_app_multiple()
