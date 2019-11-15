@@ -13,12 +13,6 @@ from matchvec.BaseModel import BaseModel
 CLASSIFICATION_MODEL = os.getenv('CLASSIFICATION_MODEL')
 
 # Get label
-filename = os.path.join(os.environ['BASE_MODEL_PATH'], CLASSIFICATION_MODEL,  'idx_to_class.json')
-with open(filename) as json_data:
-    all_categories = json.load(json_data)
-    CLASS_NUMBER = len(all_categories)
-
-
 def softmax(x):
     """Compute softmax values for each sets of scores in x."""
     e_x = np.exp(x - np.expand_dims(np.max(x, axis=1), axis=1))
@@ -36,13 +30,16 @@ class Classifier(BaseModel):
         self.files = ['classifcation_model.onnx', 'idx_to_class.json']
         dst_path = os.path.join(
             os.environ['BASE_MODEL_PATH'], CLASSIFICATION_MODEL)
-        src_path = os.path.join('model', CLASSIFICATION_MODEL)
+        src_path = CLASSIFICATION_MODEL
 
         self.download_model_folder(dst_path, src_path)
 
         self.session = onnxruntime.InferenceSession(os.path.join(dst_path, "classifcation_model.onnx"))
         self.output_name = self.session.get_outputs()[0].name
         self.input_name = self.session.get_inputs()[0].name
+
+        with open(os.path.join(dst_path, 'idx_to_class.json')) as json_data:
+            self.class_name = json.load(json_data)
 
     def prediction(self, selected_boxes: Tuple[np.ndarray, List[float]]):
         """Inference in image
@@ -83,7 +80,7 @@ class Classifier(BaseModel):
         pred = np.argmax(norm_output, axis=1)
         prob = np.max(norm_output, axis=1)
 
-        final_pred = list([[all_categories[str(i)]] for i in pred])
+        final_pred = list([[self.class_name[str(i)]] for i in pred])
         final_prob = list([[float(i)] for i in prob])
 
         return final_pred, final_prob
