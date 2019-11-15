@@ -17,8 +17,9 @@ detector = Detector()
 Classifier = import_module('matchvec.' + 'classification_' + os.getenv('BACKEND')).Classifier
 classifier = Classifier()
 
-Detector_Anonym = import_module('matchvec.' + 'anonym' + '_detection').Detector
-detector_anonym = Detector_Anonym()
+if os.environ['BACKEND'] == 'torch':
+    Detector_Anonym = import_module('matchvec.' + 'anonym' + '_detection').Detector
+    detector_anonym = Detector_Anonym()
 
 level = logging.DEBUG
 logging.basicConfig(
