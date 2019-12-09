@@ -7,9 +7,9 @@ import io
 
 
 def assert_clio(resp_data) :
-     assert resp_data[0][0]["prob"][0] > 0.8, 'Classif confidence too low %s'%resp_data
-     assert resp_data[0][0]["pred"][0] == "RENAULT CLIO",  'Not a clio'
-     assert resp_data[0][0]["confidence"] > 0.8, "Car not detected"
+    assert resp_data[0][0]["prob"][0] > 0.8, 'Classif confidence too low %s'%resp_data
+    assert resp_data[0][0]["pred"][0] == "RENAULT CLIO",  'Not a clio'
+    assert resp_data[0][0]["confidence"] > 0.8, "Car not detected"
 
 def test_predict_image(app, file_clio4):
 
