@@ -11,3 +11,4 @@ celeryd.pid
 packaged.yaml
 sam*
 aws_lambda/matchvec
+swagger.json

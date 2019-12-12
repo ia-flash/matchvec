@@ -46,13 +46,21 @@ Welcome to IAFlash's documentation!
        ├── clio-peugeot.jpg
        └── test_process.py
 
+
+API
+===
+
+.. openapi:: _static/swagger.json
+
+
+
 Contents
 ========
 
 Application modules
 
-Main app
---------
+Flask application
+-----------------
 
 .. automodule:: app
     :members:
