@@ -55,7 +55,8 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Build documentation
         run: |
-          python sivnorm/export_swagger.py
+          cp -r ./docs/model ./model
+          python matchvec/export_swagger.py
           make -C ./docs html
           touch ./docs/build/html/.nojekyll
         env:
