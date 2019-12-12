@@ -81,8 +81,9 @@
               <!-- Local TOC -->
               <div class="local-toc"><ul>
 <li><a class="reference internal" href="#">Welcome to IAFlash’s documentation!</a></li>
+<li><a class="reference internal" href="#api">API</a></li>
 <li><a class="reference internal" href="#contents">Contents</a><ul>
-<li><a class="reference internal" href="#module-app">Main app</a></li>
+<li><a class="reference internal" href="#module-app">Flask application</a></li>
 <li><a class="reference internal" href="#module-process">Process function</a></li>
 <li><a class="reference internal" href="#module-classification_onnx">Classification model</a></li>
 <li><a class="reference internal" href="#module-ssd_detection">Detection avec SSD</a></li>
@@ -195,11 +196,54 @@
 </pre></div>
 </div>
 </div>
+<div class="section" id="api">
+<h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
+<dl class="post">
+<dt id="post--object_detection">
+<code class="descname">POST </code><code class="descname">/object_detection</code><a class="headerlink" href="#post--object_detection" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Object detection</strong></p>
+<p>Image can be loaded either by using an internet URL in the url field or
+by using a local stored image in the image field</p>
+<dl class="field-list simple">
+<dt class="field-odd">Status Codes</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – Result is a list of the following element (double list)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Response JSON Object</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>[]</strong> (<em>any</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--predict">
+<code class="descname">POST </code><code class="descname">/predict</code><a class="headerlink" href="#post--predict" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Brand and model classifcation</strong></p>
+<p>Image can be loaded either by using an internet URL in the url field or
+by using a local stored image in the image field</p>
+<dl class="field-list simple">
+<dt class="field-odd">Status Codes</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> – Result is a list of the following element (double list)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Response JSON Object</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>[]</strong> (<em>any</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
 <div class="section" id="contents">
 <h1>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h1>
 <p>Application modules</p>
 <div class="section" id="module-app">
-<span id="main-app"></span><h2>Main app<a class="headerlink" href="#module-app" title="Permalink to this headline">¶</a></h2>
+<span id="flask-application"></span><h2>Flask application<a class="headerlink" href="#module-app" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="app.AnonymPrediction">
 <em class="property">class </em><code class="descclassname">app.</code><code class="descname">AnonymPrediction</code><span class="sig-paren">(</span><em>api=None</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#app.AnonymPrediction" title="Permalink to this definition">¶</a></dt>

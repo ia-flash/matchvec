@@ -1,0 +1,213 @@
+{
+  "swagger": "2.0",
+  "basePath": "http://localhost/matchvec",
+  "paths": {
+    "/object_detection": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Result is a list of the following element (double list)",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ObjectDetectionOutput"
+              }
+            }
+          }
+        },
+        "summary": "Object detection",
+        "description": "Image can be loaded either by using an internet URL in the url field or\nby using a local stored image in the image field",
+        "operationId": "post_object_detection",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "formData",
+            "type": "string",
+            "description": "Image URL in jpg format. URL must end with jpg."
+          },
+          {
+            "name": "image",
+            "in": "formData",
+            "type": "file",
+            "description": "Image saved locally. Multiple images are allowed."
+          }
+        ],
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "tags": [
+          "default"
+        ]
+      }
+    },
+    "/predict": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Result is a list of the following element (double list)",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ClassificationOutput"
+              }
+            }
+          }
+        },
+        "summary": "Brand and model classifcation",
+        "description": "Image can be loaded either by using an internet URL in the url field or\nby using a local stored image in the image field",
+        "operationId": "post_class_prediction",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "formData",
+            "type": "string",
+            "description": "Image URL in jpg format. URL must end with jpg."
+          },
+          {
+            "name": "image",
+            "in": "formData",
+            "type": "file",
+            "description": "Image saved locally. Multiple images are allowed."
+          }
+        ],
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "tags": [
+          "default"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "IA Flash",
+    "version": "1.0",
+    "description": "Classification marque et modèle"
+  },
+  "produces": [
+    "application/json"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "tags": [
+    {
+      "name": "default",
+      "description": "Default namespace"
+    }
+  ],
+  "definitions": {
+    "ObjectDetectionOutput": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BaseOutput"
+        },
+        {
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "Object detection label for visualization",
+              "example": "car: 0.95"
+            }
+          },
+          "type": "object"
+        }
+      ]
+    },
+    "BaseOutput": {
+      "properties": {
+        "x1": {
+          "type": "integer",
+          "description": "X1",
+          "example": 10,
+          "minimum": 0
+        },
+        "y1": {
+          "type": "integer",
+          "description": "Y1",
+          "example": 10,
+          "minimum": 0
+        },
+        "x2": {
+          "type": "integer",
+          "description": "X2",
+          "example": 200,
+          "minimum": 0
+        },
+        "y2": {
+          "type": "integer",
+          "description": "Y2",
+          "example": 200,
+          "minimum": 0
+        },
+        "class_name": {
+          "type": "string",
+          "description": "Object detection label",
+          "example": "car"
+        },
+        "confidence": {
+          "type": "number",
+          "description": "Object detection confidence score",
+          "example": 0.95,
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "type": "object"
+    },
+    "ClassificationOutput": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BaseOutput"
+        },
+        {
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "Classification label for visualization",
+              "example": "PEUGEOT 207: 0.54"
+            },
+            "pred": {
+              "type": "array",
+              "description": "5 first predictions classes",
+              "example": [
+                "PEUGEOT 207",
+                "CITROEN C3 PICASSO",
+                "NISSAN MICRA",
+                "CITROEN XSARA PICASSO",
+                "RENAULT KANGOO"
+              ],
+              "items": {
+                "type": "string"
+              }
+            },
+            "prob": {
+              "type": "array",
+              "description": "5 first prediction probabilities",
+              "example": [
+                0.5462563633918762,
+                0.07783588021993637,
+                0.047950416803359985,
+                0.041797831654548645,
+                0.03768396005034447
+              ],
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "responses": {
+    "ParseError": {
+      "description": "When a mask can't be parsed"
+    },
+    "MaskError": {
+      "description": "When any error occurs on mask"
+    }
+  },
+  "host": "localhost"
+}
