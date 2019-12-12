@@ -73,14 +73,17 @@ class Classifier(BaseModel):
             X.append(img)
 
         res = self.session.run([self.output_name], {self.input_name: np.array(X)})
-        #res = self.session.run([self.output_name], {self.input_name: np.expand_dims(img,axis=0)})
 
         norm_output = softmax(res[0])
 
-        pred = np.argmax(norm_output, axis=1)
-        prob = np.max(norm_output, axis=1)
-
-        final_pred = list([[self.class_name[str(i)]] for i in pred])
-        final_prob = list([[float(i)] for i in prob])
-
+        preds = np.argsort(-norm_output, axis=1)
+        pred_top = [i[:3] for i in preds.tolist()]
+        final_pred = [
+                [self.class_name[str(x)] for x in pred]
+                for pred in pred_top
+                ]
+        final_prob = [
+                [norm_output[i].tolist()[x] for x in pred_top[i]]
+                for i in range(len(pred_top))
+                ]
         return final_pred, final_prob
