@@ -48,3 +48,9 @@ Resources:
             RestApiId: !Ref "MatchvecApi"
             Path: "/{proxy+}"
             Method: POST
+        OptionEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref "MatchvecApi"
+            Path: "/{proxy+}"
+            Method: OPTIONS

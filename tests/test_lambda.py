@@ -21,6 +21,15 @@ def test_handler(apigateway_event):
     assert any(['CLIO' in vehicule['label'] for vehicule in eval(body)[0] + eval(body)[1]]), 'There is no clio in predictions %s'%body
     assert any(['BMW SERIE 5' in vehicule['label'] for vehicule in eval(body)[0] + eval(body)[1]]), 'There is no bmw in predictions %s'%body
 
+
+def test_preflight():
+    event = dict(httpMethod = 'OPTIONS',
+                 path = '/object_detection',
+                 )
+    resp = lambda_handler_classification(event, None)
+    print(resp)
+    assert resp['statusCode'] == 200
+
 if __name__ == '__main__':
     mp_encoder = MultipartEncoder(
         fields={'field0': open("tests/binary1.dat", "rb"),

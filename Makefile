@@ -108,6 +108,7 @@ layer_publish:
 		aws lambda publish-layer-version --layer-name pillow --zip-file fileb://layers/pillow/pillow.zip --compatible-runtimes python3.6
 
 sam_build:
+	rm -rf aws_lambda/matchvec
 	cp matchvec aws_lambda -r;cd aws_lambda;sam build
 
 sam_local:
@@ -126,11 +127,12 @@ sam_local:
 # sam local invoke  -e api-event.json
 
 sam_package:
-	sam package --template-file aws_lambda/template.yaml --s3-bucket iaflash --output-template-file packaged.yaml
+	sam package --template-file aws_lambda/template.yaml --s3-bucket iaflash --output-template-file aws_lambda/packaged.yaml
 
 sam_deploy:
 	aws cloudformation delete-stack --stack-name matchvec;sleep 15;\
-	aws cloudformation deploy --template-file packaged.yaml --stack-name matchvec
+	aws cloudformation deploy --template-file aws_lambda/packaged.yaml --stack-name matchvec
+	aws apigateway get-rest-apis
 
 # test aws lambda
 # curl -F image=@clio4.jpg -F "url=https://upload.wikimedia.org/wikipedia/commons/3/31/Renault_Clio_front_20080116.jpg" https://p4veiq2ftb.execute-api.eu-west-1.amazonaws.com/Prod/predict

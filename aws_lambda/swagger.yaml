@@ -55,6 +55,24 @@ paths:
         # Replace AWS_REGION and ACCOUNT_ID in uri
         uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:MatchvecFunction/invocations"
 
+    options:
+      responses:
+        '200':
+          description: Result is a list of the following element (double list)
+      summary: Preflight request
+      tags:
+        - default
+      # For AWS Integration
+      x-amazon-apigateway-request-validators:
+        basic:
+          validateRequestParameters: true
+      x-amazon-apigateway-binary-media-types:
+        - '*/*'
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        # Replace AWS_REGION and ACCOUNT_ID in uri
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:MatchvecFunction/invocations"
 
 produces:
 - application/json
