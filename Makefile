@@ -31,13 +31,16 @@ docker/conf.list:
 	# Copy default config
 	cp docker/conf.list.sample docker/conf.list
 
+network:
+	@docker network create isolated_nw 2> /dev/null; true
+
 build:
 	$(COMPOSE) build
 
-dev: docker/env.list docker/conf.list
+dev: docker/env.list docker/conf.list network
 	$(COMPOSE) up
 
-up: docker/env.list docker/conf.list
+up: docker/env.list docker/conf.list network
 	$(COMPOSE) up -d
 
 celery:
