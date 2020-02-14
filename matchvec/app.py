@@ -3,6 +3,8 @@ import json
 import cv2
 import base64
 import numpy as np
+import werkzeug
+werkzeug.cached_property = werkzeug.utils.cached_property
 from flask import Flask, send_from_directory, request, Blueprint, url_for
 from flask_restplus import Resource, Api, reqparse, fields
 from matchvec.process import predict_class, predict_objects, predict_anonym
