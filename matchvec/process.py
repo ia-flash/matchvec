@@ -11,11 +11,15 @@ from matchvec.utils import timeit
 
 assert os.environ['BACKEND'] in ['onnx','torch']
 
+CLASSIFICATION_MODEL = os.getenv('CLASSIFICATION_MODEL')
+CLASSIFICATION_MODEL_COLOR = os.getenv('CLASSIFICATION_MODEL_COLOR')
+
 Detector = import_module('matchvec.' + os.getenv('DETECTION_MODEL') + '_detection').Detector
 detector = Detector()
 
 Classifier = import_module('matchvec.' + 'classification_' + os.getenv('BACKEND')).Classifier
-classifier = Classifier()
+classifier_mm = Classifier(model_name = CLASSIFICATION_MODEL)
+classifier_color = Classifier(model_name = CLASSIFICATION_MODEL_COLOR)
 
 if os.environ['BACKEND'] == 'torch':
     Detector_Anonym = import_module('matchvec.' + 'anonym' + '_detection').Detector
@@ -131,7 +135,6 @@ def predict_objects(img: np.ndarray) -> List[Union[str, float]]:
     cols = ['x1', 'y1', 'x2', 'y2', 'class_name', 'confidence', 'label']
     return df[cols].to_dict(orient='records')
 
-
 @timeit
 def predict_class(img: np.ndarray) -> List[Union[str, float]]:
     """Classficate image
@@ -160,7 +163,54 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
     # Selected box
     if len(selected_boxes) > 0:
 
-        pred, prob = classifier.prediction(selected_boxes)
+        pred, prob = classifier_mm.prediction(selected_boxes)
+        df = df.assign(
+                pred=pred,
+                prob=prob,
+                label=lambda x: (
+                    x['pred'].apply(lambda x: x[0]) +
+                    ": " + (
+                        x['prob'].apply(lambda x: x[0])
+                        .astype(str).str.slice(stop=4)
+                        )
+                    )
+                )
+        cols = ['x1', 'y1', 'x2', 'y2', 'pred', 'prob', 'class_name',
+                'confidence', 'label']
+        return df[cols].to_dict(orient='records')
+
+    else:
+        return list()
+
+@timeit
+def predict_color(img: np.ndarray) -> List[Union[str, float]]:
+    """Classficate image
+
+    Args:
+        img: Image to make inference
+
+    Returns:
+        result: Predictions
+    """
+    #cv2.imwrite('/app/img.jpg',img)
+
+    result = detector.prediction(img)
+    df = detector.create_df(result, img)
+
+    # Filter by class
+    df = df[(df['class_name'] == 'car') | (df['class_name'] == 'truck')]
+    #Image.fromarray(img).convert('RGB').save('/app/debug/classif_input.jpg')
+    selected_boxes = list(
+            zip(
+                [Image.fromarray(img)]*len(df),
+                df[['x1', 'y1', 'x2', 'y2']].values.tolist()
+                )
+            )
+
+    # Selected box
+    if len(selected_boxes) > 0:
+
+        pred, prob = classifier_color.prediction(selected_boxes)
         df = df.assign(
                 pred=pred,
                 prob=prob,
@@ -205,7 +255,7 @@ if __name__ == '__main__':
     print(img.shape)
     #res = predict_objects(img)
     #res = predict_class(img)
-    res = predict_anonym(img)
+    res = predict_color(img)
     print(res)
     #test_app()
     #test_app_multiple()

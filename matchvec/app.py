@@ -7,7 +7,7 @@ import werkzeug
 werkzeug.cached_property = werkzeug.utils.cached_property
 from flask import Flask, send_from_directory, request, Blueprint, url_for
 from flask_restplus import Resource, Api, reqparse, fields
-from matchvec.process import predict_class, predict_objects, predict_anonym
+from matchvec.process import predict_class, predict_objects, predict_anonym, predict_color
 from werkzeug.datastructures import FileStorage
 from urllib.request import urlopen
 from matchvec.utils import logger
@@ -303,25 +303,28 @@ class ClassPrediction(Resource):
         images = request.files.getlist('image')
         url = request.form.get('url', None)
         res = list()
+        print(20*"-")
+        print(images)
         if url:
             try:
                 resp = urlopen(url)
                 img = np.asarray(bytearray(resp.read()), dtype="uint8")
                 img = cv2.imdecode(img, cv2.IMREAD_COLOR)
                 img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
-                res.append(predict_class(img))
+                res.append(predict_color(img))
             except Exception as e:
                 print(url)
                 print(e)
                 res.append([])
 
         if images:
+
             for i in range(len(images)):
                 try:
                     nparr = np.frombuffer(images[i].read(), np.uint8)
                     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                     img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
-                    res.append(predict_class(img))
+                    res.append(predict_color(img))
                 except Exception as e:
                     print(e)
                     res.append([])
@@ -368,4 +371,5 @@ class AnonymPrediction(Resource):
 
 
 if __name__ == '__main__':
+    img = cv2.imread('/home/yann/Documents/voiture_rouge.jpg')
     app.run(host='0.0.0.0', debug=bool(os.getenv('DEBUG')))

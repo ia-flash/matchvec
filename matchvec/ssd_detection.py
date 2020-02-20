@@ -86,3 +86,17 @@ class Detector(BaseModel):
                 )
         df = df[df['confidence'] > DETECTION_THRESHOLD]
         return df
+
+if __name__ == '__main__':
+    img = cv2.imread('tests/clio-peugeot.jpg')
+    #img = cv2.imread('image.jpg')
+    print(img.shape)
+    #res = predict_objects(img)
+    #res = predict_class(img)
+    detector = Detector()
+    res = detector.prediction(img)
+    print(res)
+    df=detector.create_df(res,img)
+    print(df)
+    #test_app()
+    #test_app_multiple()
