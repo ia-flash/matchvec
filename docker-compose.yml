@@ -24,10 +24,9 @@ services:
       - isolated_nw
     labels:
       - traefik.enable=true
-      - traefik.backend=matchvec
-      - traefik.port=5000
-      - traefik.frontend.rule=PathPrefix:/matchvec/,/swaggerui/
-      - traefik.frontend.priority=10
+      - traefik.http.routers.matchvec.entrypoints=http
+      - traefik.http.routers.matchvec.rule=PathPrefix(`/matchvec`) || PathPrefix(`/swaggerui`)
+      - traefik.http.services.matchvec.loadbalancer.server.port=5000
   redis:
     image: redis:alpine
     container_name: ${USER}-redis
