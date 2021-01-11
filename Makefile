@@ -77,8 +77,9 @@ docs: docs/html
 	echo "Post"
 
 test:
-	#$(COMPOSE) exec matchvec python tests/test_process.py
-	$(COMPOSE) exec matchvec pytest tests/
+	#You can test a specific function with for instance:
+	# make test test=test_process.py::test_class_prio
+	$(COMPOSE) exec matchvec pytest tests/$(test) -s
 
 layers:
 	mkdir -p layers/pandas/python

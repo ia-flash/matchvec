@@ -15,7 +15,10 @@ Detector = import_module('matchvec.' + os.getenv('DETECTION_MODEL') + '_detectio
 detector = Detector()
 
 Classifier = import_module('matchvec.' + 'classification_' + os.getenv('BACKEND')).Classifier
-classifier = Classifier()
+classifier = Classifier(os.getenv('CLASSIFICATION_MODEL'))
+
+if 'CLASSIFICATION_MODEL_PRIO' in os.environ:
+    classifier_prio = Classifier(os.getenv('CLASSIFICATION_MODEL_PRIO'))
 
 if os.environ['BACKEND'] == 'torch':
     Detector_Anonym = import_module('matchvec.' + 'anonym' + '_detection').Detector
@@ -161,6 +164,7 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
     if len(selected_boxes) > 0:
 
         pred, prob = classifier.prediction(selected_boxes)
+
         df = df.assign(
                 pred=pred,
                 prob=prob,
@@ -174,6 +178,21 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
                 )
         cols = ['x1', 'y1', 'x2', 'y2', 'pred', 'prob', 'class_name',
                 'confidence', 'label']
+
+        if 'CLASSIFICATION_MODEL_PRIO' in os.environ:
+            pred_prio, prob_prio = classifier_prio.prediction(selected_boxes)
+            df = df.assign(
+                    pred_prio=pred_prio,
+                    prob_prio=prob_prio,
+                    label_prio=lambda x: (
+                        x['pred_prio'].apply(lambda x: x[0]) +
+                        ": " + (
+                            x['prob_prio'].apply(lambda x: x[0])
+                            .astype(str).str.slice(stop=4)
+                            )
+                        )
+                    )
+            cols += ['pred_prio', 'prob_prio','label_prio']
         return df[cols].to_dict(orient='records')
 
     else:
