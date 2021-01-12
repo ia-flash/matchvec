@@ -210,20 +210,50 @@ ObjectDetectionOutput = api.inherit('ObjectDetectionOutput', BaseOutput, {
             })
 
 
-ClassificationOutput = api.inherit('ClassificationOutput', BaseOutput, {
-            'label': fields.String(
-                description='Classification label for visualization',
-                example='PEUGEOT 207: 0.54'),
-            'pred': fields.List(fields.String(),
-                description='5 first predictions classes',
-                example=['PEUGEOT 207', 'CITROEN C3 PICASSO', 'NISSAN MICRA',
-                         'CITROEN XSARA PICASSO', 'RENAULT KANGOO']
-                ),
-            'prob': fields.List(fields.Float(),
-                description='5 first prediction probabilities',
-                example=[0.5462563633918762, 0.07783588021993637, 0.047950416803359985,
-                    0.041797831654548645, 0.03768396005034447])
-                })
+
+
+if 'CLASSIFICATION_MODEL_PRIO' in os.environ:
+    ClassificationOutput = api.inherit('ClassificationPrioOutput', BaseOutput, {
+                'label': fields.String(
+                    description='Classification label for visualization',
+                    example='PEUGEOT 207: 0.54'),
+                'pred': fields.List(fields.String(),
+                    description='5 first predictions classes',
+                    example=['PEUGEOT 207', 'CITROEN C3 PICASSO', 'NISSAN MICRA',
+                             'CITROEN XSARA PICASSO', 'RENAULT KANGOO']
+                    ),
+                'prob': fields.List(fields.Float(),
+                    description='5 first prediction probabilities',
+                    example=[0.5462563633918762, 0.07783588021993637, 0.047950416803359985,
+                        0.041797831654548645, 0.03768396005034447]),
+                'label_prio': fields.String(
+                    description='Classification label for visualization',
+                    example='POMPIER: 0.54'),
+                'pred_prio': fields.List(fields.String(),
+                    description='5 first predictions classes',
+                    example=['POMPIER', 'POLICE', 'AMBULANCE',
+                             'GENDARME', 'AUTRES']
+                    ),
+                'prob_prio': fields.List(fields.Float(),
+                    description='5 first prediction probabilities',
+                    example=[0.5462563633918762, 0.07783588021993637, 0.047950416803359985,
+                        0.041797831654548645, 0.03768396005034447])
+                    })
+else:
+    ClassificationOutput = api.inherit('ClassificationOutput', BaseOutput, {
+                'label': fields.String(
+                    description='Classification label for visualization',
+                    example='PEUGEOT 207: 0.54'),
+                'pred': fields.List(fields.String(),
+                    description='5 first predictions classes',
+                    example=['PEUGEOT 207', 'CITROEN C3 PICASSO', 'NISSAN MICRA',
+                             'CITROEN XSARA PICASSO', 'RENAULT KANGOO']
+                    ),
+                'prob': fields.List(fields.Float(),
+                    description='5 first prediction probabilities',
+                    example=[0.5462563633918762, 0.07783588021993637, 0.047950416803359985,
+                        0.041797831654548645, 0.03768396005034447])
+                    })
 
 
 @api.route('/video_detection', doc=False)

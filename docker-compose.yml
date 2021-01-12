@@ -27,6 +27,8 @@ services:
       - traefik.http.routers.matchvec.entrypoints=http
       - traefik.http.routers.matchvec.rule=PathPrefix(`/matchvec`) || PathPrefix(`/swaggerui`)
       - traefik.http.services.matchvec.loadbalancer.server.port=5000
+    ports:
+      - "5000:5000"
   redis:
     image: redis:alpine
     container_name: ${USER}-redis
