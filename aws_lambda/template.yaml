@@ -38,10 +38,10 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
       Layers:
-          - arn:aws:lambda:eu-west-1:016363657960:layer:onnx:1
-          - arn:aws:lambda:eu-west-1:016363657960:layer:opencv:1
-          - arn:aws:lambda:eu-west-1:016363657960:layer:pandas:1
-          - arn:aws:lambda:eu-west-1:016363657960:layer:pillow:2
+          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:onnx:1
+          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:opencv:1
+          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:pandas:1
+          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:pillow:2
       Events:
         PostEvent:
           Type: Api
