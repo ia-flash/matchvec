@@ -18,7 +18,7 @@ Launch dockers
 make up
 ```
 
-Launch celery worker 
+Launch celery worker
 
 ```
 make celery
@@ -35,6 +35,8 @@ See [iaflash.fr/testapi/matchvec](https://iaflash.fr/testapi/matchvec)
 # Test
 
 `make test`
+
+# Sam support
 
 
 # License

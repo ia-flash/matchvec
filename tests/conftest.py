@@ -7,6 +7,7 @@ import base64
 path_clio4 = "tests/clio4.jpg"
 path_bmw = "tests/bmw.png"
 url_clio3 = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Renault_Clio_III_20090527_front.JPG/800px-Renault_Clio_III_20090527_front.JPG"
+url_pompier_fpt = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Renault_C-Truck.jpg/330px-Renault_C-Truck.jpg"
 
 @pytest.fixture
 def app():
@@ -27,6 +28,10 @@ def file_clio4():
 @pytest.fixture
 def url_clio():
     yield url_clio3
+
+@pytest.fixture
+def url_pompier():
+    yield url_pompier_fpt
 
 @pytest.fixture
 def img_clio4():

@@ -15,7 +15,10 @@ Detector = import_module('matchvec.' + os.getenv('DETECTION_MODEL') + '_detectio
 detector = Detector()
 
 Classifier = import_module('matchvec.' + 'classification_' + os.getenv('BACKEND')).Classifier
-classifier = Classifier()
+classifier = Classifier(os.getenv('CLASSIFICATION_MODEL'))
+
+if 'CLASSIFICATION_MODEL_PRIO' in os.environ:
+    classifier_prio = Classifier(os.getenv('CLASSIFICATION_MODEL_PRIO'))
 
 if os.environ['BACKEND'] == 'torch':
     Detector_Anonym = import_module('matchvec.' + 'anonym' + '_detection').Detector
@@ -158,26 +161,34 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
             )
 
     # Selected box
+    res = list()
+    cols = ['x1', 'y1', 'x2', 'y2', 'class_name','confidence']
+
     if len(selected_boxes) > 0:
 
         pred, prob = classifier.prediction(selected_boxes)
-        df = df.assign(
-                pred=pred,
-                prob=prob,
-                label=lambda x: (
-                    x['pred'].apply(lambda x: x[0]) +
-                    ": " + (
-                        x['prob'].apply(lambda x: x[0])
-                        .astype(str).str.slice(stop=4)
-                        )
-                    )
-                )
-        cols = ['x1', 'y1', 'x2', 'y2', 'pred', 'prob', 'class_name',
-                'confidence', 'label']
-        return df[cols].to_dict(orient='records')
+        for i, obj in enumerate(df[cols].to_dict(orient="records")):
+            obj.update({
+                            "brand_model_classif": {
+                                "pred": pred[i],
+                                "prob": prob[i],
+                                "label": pred[i][0] + ": " + str(round(prob[i][0],4))
+                                }
+                            })
+            res += [obj]
 
-    else:
-        return list()
+        if 'CLASSIFICATION_MODEL_PRIO' in os.environ:
+            pred_prio, prob_prio = classifier_prio.prediction(selected_boxes)
+            for i, obj in enumerate(res):
+                obj.update({
+                                "prio_classif": {
+                                    "pred": pred_prio[i],
+                                    "prob": prob_prio[i],
+                                    "label": pred_prio[i][0] + ": " + str(round(prob_prio[i][0],4))
+                                    }
+                                })
+                res[i] = obj
+    return res
 
 
 @timeit

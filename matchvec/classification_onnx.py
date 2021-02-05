@@ -10,7 +10,6 @@ from matchvec.utils import timeit
 from matchvec.BaseModel import BaseModel
 
 
-CLASSIFICATION_MODEL = os.getenv('CLASSIFICATION_MODEL')
 
 # Get label
 def softmax(x):
@@ -26,11 +25,11 @@ class Classifier(BaseModel):
     """
 
     @timeit
-    def __init__(self):
+    def __init__(self, classification_model):
         self.files = ['classifcation_model.onnx', 'idx_to_class.json']
         dst_path = os.path.join(
-            os.environ['BASE_MODEL_PATH'], CLASSIFICATION_MODEL)
-        src_path = CLASSIFICATION_MODEL
+            os.environ['BASE_MODEL_PATH'], classification_model)
+        src_path = classification_model
 
         self.download_model_folder(dst_path, src_path)
 

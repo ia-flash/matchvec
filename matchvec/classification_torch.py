@@ -13,25 +13,6 @@ from matchvec.utils import timeit, logger
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 
-CLASSIFICATION_MODEL = os.getenv('CLASSIFICATION_MODEL')
-
-# Get label
-filename = os.path.join(os.environ['BASE_MODEL_PATH'], CLASSIFICATION_MODEL,  'idx_to_class.json')
-with open(filename) as json_data:
-    all_categories = json.load(json_data)
-    CLASS_NUMBER = len(all_categories)
-
-checkpoint = torch.load(
-        os.path.join(os.environ['BASE_MODEL_PATH'], CLASSIFICATION_MODEL, 'model_best.pth.tar'),
-        map_location='cpu'
-        )
-state_dict = checkpoint['state_dict']
-
-new_state_dict: Dict = OrderedDict()
-for k, v in state_dict.items():
-    name = k[7:]  # remove 'module.' of dataparallel
-    new_state_dict[name] = v
-
 
 class DatasetList(torch.utils.data.Dataset):
     """ Datalist generator
@@ -84,10 +65,29 @@ class Classifier(object):
     """
 
     @timeit
-    def __init__(self):
+    def __init__(self, classification_model):
         """TODO: to be defined1. """
+        # Get label
+        print('****** TOTO ********')
+        filename = os.path.join(os.environ['BASE_MODEL_PATH'], classification_model,  'idx_to_class.json')
+        with open(filename) as json_data:
+            self.all_categories = json.load(json_data)
+            class_number = len(self.all_categories)
+
+        checkpoint = torch.load(
+                os.path.join(os.environ['BASE_MODEL_PATH'], classification_model, 'model_best.pth.tar'),
+                map_location='cpu'
+                )
+
+        state_dict = checkpoint['state_dict']
+
+        new_state_dict: Dict = OrderedDict()
+        for k, v in state_dict.items():
+            name = k[7:]  # remove 'module.' of dataparallel
+            new_state_dict[name] = v
+
         self.classification_model = models.__dict__['resnet18'](pretrained=True)
-        self.classification_model.fc = nn.Linear(512, CLASS_NUMBER)
+        self.classification_model.fc = nn.Linear(512, class_number)
         self.classification_model.load_state_dict(new_state_dict)
         print(type(device))
         if device.type == 'cuda' :
@@ -140,7 +140,7 @@ class Classifier(object):
             probs, preds = norm_output.topk(5, 1, True, True)
             pred = preds.data.cpu().tolist()
             pred_class = [
-                    [all_categories[str(x)] for x in pred[i]]
+                    [self.all_categories[str(x)] for x in pred[i]]
                     for i in range(len(pred))
                     ]
             prob = probs.data.cpu().tolist()

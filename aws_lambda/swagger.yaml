@@ -1,8 +1,8 @@
 swagger: "2.0"
 info:
-  description: "Use this API to obtain the make and model of an vehicule image."
-  version: "1.0.0"
-  title: "Matchvec API"
+  description: "Use this API to obtain the make and model of an vehicule image and emergency vehicles classification"
+  version: "2.0.0"
+  title: "Matchvec-prio API"
 host: "iaflash.fr"
 basePath: "/v1"
 schemes:
@@ -24,7 +24,7 @@ paths:
             type: array
             items:
               "$ref": "#/definitions/ClassificationOutput"
-      summary: Brand and model classifcation
+      summary: Brand and model classifcation and vehicle types (emergency or other)
       description: |-
         Image can be loaded either by using an internet URL in the url field or
         by using a local stored image in the image field
@@ -53,7 +53,7 @@ paths:
         type: "aws_proxy"
         httpMethod: "POST"
         # Replace AWS_REGION and ACCOUNT_ID in uri
-        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:MatchvecFunction/invocations"
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:MatchvecFunctionPrio/invocations"
 
     options:
       responses:
@@ -72,7 +72,7 @@ paths:
         type: "aws_proxy"
         httpMethod: "POST"
         # Replace AWS_REGION and ACCOUNT_ID in uri
-        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:MatchvecFunction/invocations"
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:MatchvecFunctionPrio/invocations"
 
 produces:
 - application/json
@@ -117,23 +117,34 @@ definitions:
         minimum: 0
         maximum: 1
     type: object
+  BaseClassifOutput:
+    properties:
+      label:
+        type: string
+        description: Classification label for visualization
+      pred:
+        type: array
+        description: 5 first predictions classes
+        items:
+          type: string
+      prob:
+        type: array
+        description: 5 first prediction probabilities
+        items:
+          type: number
+    type: object
   ClassificationOutput:
     allOf:
     - "$ref": "#/definitions/BaseOutput"
     - properties:
-        label:
-          type: string
-          description: Classification label for visualization
-        pred:
-          type: array
-          description: 5 first predictions classes
-          items:
-            type: string
-        prob:
-          type: array
-          description: 5 first prediction probabilities
-          items:
-            type: number
+        brand_model_classif:
+          type: object
+          description: Classification label brand/model
+          "$ref": "#/definitions/BaseClassifOutput"
+        prio_classif:
+          type: object
+          description: Classification label prio
+          "$ref": "#/definitions/BaseClassifOutput"
       type: object
 responses:
   ParseError:

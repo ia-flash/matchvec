@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  IA Flash
+  IA Flash with emergency vehicles classifcation
 
   IA Flash app
 
@@ -16,20 +16,21 @@ Globals:
         DETECTION_THRESHOLD: 0.4
         BASE_MODEL_PATH: /tmp
         CLASSIFICATION_MODEL: resnet18-151-refined
+        CLASSIFICATION_MODEL_PRIO: resnet18-prio-refined
         DETECTION_MODEL: ssd
         DETECTION_THRESHOLD: 0.4
 Resources:
-  MatchvecApi:
+  MatchvecApiPrio:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
       DefinitionUri: ./swagger.yaml
       BinaryMediaTypes:
          - multipart~1form-data
-  MatchvecFunction:
+  MatchvecFunctionPrio:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      FunctionName: MatchvecFunction
+      FunctionName: MatchvecFunctionPrio
       CodeUri:  ./
       Handler: lambda_function.lambda_handler_classification
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/lambda
@@ -37,20 +38,20 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
       Layers:
-          - arn:aws:lambda:eu-west-1:016363657960:layer:onnx:1
-          - arn:aws:lambda:eu-west-1:016363657960:layer:opencv:1
-          - arn:aws:lambda:eu-west-1:016363657960:layer:pandas:1
-          - arn:aws:lambda:eu-west-1:016363657960:layer:pillow:2
+          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:onnx:1
+          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:opencv:1
+          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:pandas:1
+          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:pillow:2
       Events:
         PostEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref "MatchvecApi"
+            RestApiId: !Ref "MatchvecApiPrio"
             Path: "/{proxy+}"
             Method: POST
         OptionEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref "MatchvecApi"
+            RestApiId: !Ref "MatchvecApiPrio"
             Path: "/{proxy+}"
             Method: OPTIONS

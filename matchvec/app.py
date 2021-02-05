@@ -202,6 +202,20 @@ BaseOutput = api.model('BaseOutput', {
                                min=0, max=1, example=0.95),
     })
 
+ClassifOutput = {
+    'label': fields.String(
+        description='Classification label for visualization',
+        example='PEUGEOT 207: 0.54'),
+    'pred': fields.List(fields.String(),
+        description='5 first predictions classes',
+        example=['PEUGEOT 207', 'CITROEN C3 PICASSO', 'NISSAN MICRA',
+                 'CITROEN XSARA PICASSO', 'RENAULT KANGOO']
+        ),
+    'prob': fields.List(fields.Float(),
+        description='5 first prediction probabilities',
+        example=[0.5462563633918762, 0.07783588021993637, 0.047950416803359985,
+            0.041797831654548645, 0.03768396005034447])
+    }
 
 ObjectDetectionOutput = api.inherit('ObjectDetectionOutput', BaseOutput, {
             'label': fields.String(
@@ -209,21 +223,14 @@ ObjectDetectionOutput = api.inherit('ObjectDetectionOutput', BaseOutput, {
                 example='car: 0.95'),
             })
 
+if 'CLASSIFICATION_MODEL_PRIO' in os.environ:
+    ClassificationOutput = api.inherit('ClassificationOutput', BaseOutput, {
+                'brand_model_classif': fields.Nested(ClassifOutput),
+                'prio_classif': fields.Nested(ClassifOutput)})
+else:
+    ClassificationOutput = api.inherit('ClassificationOutput', BaseOutput, {
+                'brand_model_classif': fields.Nested(ClassifOutput)})
 
-ClassificationOutput = api.inherit('ClassificationOutput', BaseOutput, {
-            'label': fields.String(
-                description='Classification label for visualization',
-                example='PEUGEOT 207: 0.54'),
-            'pred': fields.List(fields.String(),
-                description='5 first predictions classes',
-                example=['PEUGEOT 207', 'CITROEN C3 PICASSO', 'NISSAN MICRA',
-                         'CITROEN XSARA PICASSO', 'RENAULT KANGOO']
-                ),
-            'prob': fields.List(fields.Float(),
-                description='5 first prediction probabilities',
-                example=[0.5462563633918762, 0.07783588021993637, 0.047950416803359985,
-                    0.041797831654548645, 0.03768396005034447])
-                })
 
 
 @api.route('/video_detection', doc=False)
