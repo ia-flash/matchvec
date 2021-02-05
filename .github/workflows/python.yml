@@ -55,6 +55,7 @@ jobs:
           TORCH_HOME: './model'
           DEBUG: 1
           CLASSIFICATION_MODEL: 'resnet18-151-refined'
+          CLASSIFICATION_MODEL_PRIO: 'resnet18-prio-refined'
           DETECTION_MODEL: ssd
           DETECTION_THRESHOLD: 0.4
           BACKEND: 'onnx'
