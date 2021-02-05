@@ -202,7 +202,7 @@ BaseOutput = api.model('BaseOutput', {
                                min=0, max=1, example=0.95),
     })
 
-ClassifOutput = {
+ClassifOutput = api.model('ClassifOutput', {
     'label': fields.String(
         description='Classification label for visualization',
         example='PEUGEOT 207: 0.54'),
@@ -215,7 +215,7 @@ ClassifOutput = {
         description='5 first prediction probabilities',
         example=[0.5462563633918762, 0.07783588021993637, 0.047950416803359985,
             0.041797831654548645, 0.03768396005034447])
-    }
+    })
 
 ObjectDetectionOutput = api.inherit('ObjectDetectionOutput', BaseOutput, {
             'label': fields.String(
