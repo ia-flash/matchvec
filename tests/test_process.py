@@ -27,7 +27,7 @@ def test_class_prio(img_clio4):
 
         print('Testing image', img_clio4.shape)
         res = predict_class(img_clio4)
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         assert type(res) == list
         assert any(['CLIO' in vehicule['brand_model_classif']['label'] for vehicule in res]), 'There is no clio in first predictions'
         assert any(['AUTRES' in vehicule['prio_classif']['label'] for vehicule in res]), 'There is no clio in first predictions'
