@@ -26,7 +26,6 @@ jobs:
 
       - name: Build documentation
         run: |
-          cp -r ./docs/model ./model
           python matchvec/export_swagger.py
           make -C ./docs html
           touch ./docs/build/html/.nojekyll
