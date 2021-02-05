@@ -87,7 +87,7 @@
 <li><a class="reference internal" href="#module-process">Process function</a></li>
 <li><a class="reference internal" href="#module-classification_onnx">Classification model</a></li>
 <li><a class="reference internal" href="#module-ssd_detection">Detection avec SSD</a></li>
-<li><a class="reference internal" href="#module-yolo_detection">Detection avec Yolo</a></li>
+<li><a class="reference internal" href="#detection-avec-yolo">Detection avec Yolo</a></li>
 <li><a class="reference internal" href="#module-utils">Other functions</a></li>
 </ul>
 </li>
@@ -520,82 +520,8 @@ SWAPRB: Swap R and B chanels (usefull when opening using opencv) (Default: False
 </dd></dl>
 
 </div>
-<div class="section" id="module-yolo_detection">
-<span id="detection-avec-yolo"></span><h2>Detection avec Yolo<a class="headerlink" href="#module-yolo_detection" title="Permalink to this headline">¶</a></h2>
-<p>Yolo detection</p>
-<dl class="class">
-<dt id="yolo_detection.Detector">
-<em class="property">class </em><code class="descclassname">yolo_detection.</code><code class="descname">Detector</code><span class="sig-paren">(</span><em>**kw</em><span class="sig-paren">)</span><a class="headerlink" href="#yolo_detection.Detector" title="Permalink to this definition">¶</a></dt>
-<dd><p>Yolo object detection</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>DETECTION_MODEL</strong> – Detection model to use</p></li>
-<li><p><strong>DETECTION_THRESHOLD</strong> – Detection threshold</p></li>
-<li><p><strong>NMS_THRESHOLD</strong> – Non Maximum Supression threshold (to remove overlapping boxes)</p></li>
-<li><p><strong>SWAPRB</strong> – Swap R and B chanels (usefull when opening using opencv) (Default: False)</p></li>
-<li><p><strong>SCALE</strong> – Yolo uses a normalisation factor different than 1 for each pixel</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="method">
-<dt id="yolo_detection.Detector.create_df">
-<code class="descname">create_df</code><span class="sig-paren">(</span><em>result</em>, <em>image</em><span class="sig-paren">)</span><a class="headerlink" href="#yolo_detection.Detector.create_df" title="Permalink to this definition">¶</a></dt>
-<dd><p>Filter predictions and create an output DataFrame</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>result</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>]) – Result from prediction model</p></li>
-<li><p><strong>image</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>) – Image where the inference has been made</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Onject detection predictions filtered</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>df</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="yolo_detection.Detector.prediction">
-<code class="descname">prediction</code><span class="sig-paren">(</span><em>image</em><span class="sig-paren">)</span><a class="headerlink" href="#yolo_detection.Detector.prediction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Inference</p>
-<p>Make inference</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>image</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>) – input image</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Yolo boxes from object detections</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>result</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="yolo_detection.filter_yolo">
-<code class="descclassname">yolo_detection.</code><code class="descname">filter_yolo</code><span class="sig-paren">(</span><em>chunk</em><span class="sig-paren">)</span><a class="headerlink" href="#yolo_detection.filter_yolo" title="Permalink to this definition">¶</a></dt>
-<dd><p>Filter Yolo chunks</p>
-<p>Create a DataFrame from each chunk and then filter it with the DETECTION_THRESHOLD</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>chunk</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>) – A Yolo chunk</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The object detection predictions for the chunk</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>df</p>
-</dd>
-</dl>
-</dd></dl>
-
+<div class="section" id="detection-avec-yolo">
+<h2>Detection avec Yolo<a class="headerlink" href="#detection-avec-yolo" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-utils">
 <span id="other-functions"></span><h2>Other functions<a class="headerlink" href="#module-utils" title="Permalink to this headline">¶</a></h2>
