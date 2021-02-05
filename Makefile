@@ -131,11 +131,11 @@ sam_local:
 # sam local invoke  -e api-event.json
 
 sam_package:
-	sam package --template-file aws_lambda/template.yaml --s3-bucket iaflash --output-template-file aws_lambda/packaged.yaml
+	sam package --template-file aws_lambda/template.yaml --s3-bucket iaflash --output-template-file aws_lambda/packaged-prio.yaml
 
 sam_deploy:
-	aws cloudformation delete-stack --stack-name matchvec;sleep 15;\
-	aws cloudformation deploy --template-file aws_lambda/packaged.yaml --stack-name matchvec
+	aws cloudformation delete-stack --stack-name matchvec-prio;sleep 15;\
+	aws cloudformation deploy --template-file aws_lambda/packaged-prio.yaml --stack-name matchvec-prio
 	aws apigateway get-rest-apis
 
 # test aws lambda

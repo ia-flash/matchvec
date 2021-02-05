@@ -16,7 +16,7 @@ Globals:
         DETECTION_THRESHOLD: 0.4
         BASE_MODEL_PATH: /tmp
         CLASSIFICATION_MODEL: resnet18-151-refined
-        CLASSIFICATION_MODEL_RPIO: resnet18-prio-refined
+        CLASSIFICATION_MODEL_PRIO: resnet18-prio-refined
         DETECTION_MODEL: ssd
         DETECTION_THRESHOLD: 0.4
 Resources:
