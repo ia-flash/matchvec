@@ -19,26 +19,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r docker/cpu/onnx/requirements.txt
           pip install -e .
-      - name: Download classification model
-        uses: ia-flash/s3-download-action@master
-        with:
-          args:
-        env:
-          DEST_DIR: './model/resnet18-151-refined'
-          AWS_REGION: 'eu-west-1'
-          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - name: Download ssd model
-        uses: ia-flash/s3-download-action@master
-        with:
-          args:
-        env:
-          DEST_DIR: './model/ssd_mobilenet_v2_coco_2018_03_29'
-          AWS_REGION: 'eu-west-1'
-          AWS_S3_BUCKET: 'iaflash/model/ssd_mobilenet_v2_coco_2018_03_29'
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: Lint with flake8
         run: |
           pip install flake8
@@ -55,7 +35,10 @@ jobs:
           TORCH_HOME: './model'
           DEBUG: 1
           CLASSIFICATION_MODEL: 'resnet18-151-refined'
+          CLASSIFICATION_MODEL_PRIO: 'resnet18-prio-refined'
           DETECTION_MODEL: ssd
           DETECTION_THRESHOLD: 0.4
           BACKEND: 'onnx'
-
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: 'eu-west-1'
