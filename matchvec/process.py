@@ -152,6 +152,8 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
 
     # Filter by class
     df = df[(df['class_name'] == 'car') | (df['class_name'] == 'truck')]
+    df = filter_by_iou(df)
+
     #Image.fromarray(img).convert('RGB').save('/app/debug/classif_input.jpg')
     selected_boxes = list(
             zip(
