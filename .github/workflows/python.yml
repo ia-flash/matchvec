@@ -38,6 +38,7 @@ jobs:
           CLASSIFICATION_MODEL_PRIO: 'resnet18-prio-refined'
           DETECTION_MODEL: ssd
           DETECTION_THRESHOLD: 0.4
+          ANONYM_MODEL: faster_rcnn_r50_fpn_anonym
           BACKEND: 'onnx'
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
