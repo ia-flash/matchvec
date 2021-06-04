@@ -1,5 +1,5 @@
 import os
-from matchvec.process import predict_class, predict_objects
+from matchvec.process import predict_class, predict_objects, predict_anonym
 from importlib import import_module
 Classifier = import_module('matchvec.classification_' + os.getenv('BACKEND')).Classifier
 
@@ -35,6 +35,17 @@ def test_class_prio(img_clio4):
     else:
         print('!!!! Test not executed, add CLASSIFICATION_MODEL_PRIO path !!!!!')
 
+def test_anonym(img_clio_peugeot):
+    """Test if 'ANONYM_MODEL' in os.environ
+    """
+    if 'ANONYM_MODEL' in os.environ:
+        print('Testing image', img_clio_peugeot.shape)
+        res = predict_anonym(img_clio_peugeot)
+        assert sum(['plate' in obj['label'] for obj in res]) == 4, 'Some plates are missing'
+        assert sum(['person' in obj['label'] for obj in res]) == 1, 'Some persons are missing'
+
+    else:
+        print('!!!! Test not executed, add ANONYM_MODEL path !!!!!')
 
 def test_object(img_clio4):
     res = predict_objects(img_clio4)

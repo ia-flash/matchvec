@@ -20,8 +20,8 @@ classifier = Classifier(os.getenv('CLASSIFICATION_MODEL'))
 if 'CLASSIFICATION_MODEL_PRIO' in os.environ:
     classifier_prio = Classifier(os.getenv('CLASSIFICATION_MODEL_PRIO'))
 
-if os.environ['BACKEND'] == 'torch':
-    Detector_Anonym = import_module('matchvec.' + 'anonym' + '_detection').Detector
+if 'ANONYM_MODEL' in os.environ:
+    Detector_Anonym = import_module('matchvec.' + 'anonym_' + os.getenv('BACKEND')).Detector
     detector_anonym = Detector_Anonym()
 
 level = logging.DEBUG
@@ -204,7 +204,8 @@ def predict_anonym(img: np.ndarray) -> List[Union[str, float]]:
         result: Predictions
     """
     result = detector_anonym.prediction(img)
-    df = detector_anonym.create_df(result, img)
+    df = detector_anonym.create_df(result)
+
     df = detector_anonym.detect_band(df, img)
     if len(df) > 0:
         cols = ['x1', 'y1', 'x2', 'y2', 'class_name', 'confidence', 'label']
@@ -214,7 +215,7 @@ def predict_anonym(img: np.ndarray) -> List[Union[str, float]]:
 
 if __name__ == '__main__':
     img = cv2.imread('tests/clio-peugeot.jpg')
-    #img = cv2.imread('image.jpg')
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) # Respect matchvec input format
     print(img.shape)
     #res = predict_objects(img)
     #res = predict_class(img)
