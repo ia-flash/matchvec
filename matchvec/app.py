@@ -342,7 +342,7 @@ class AnonymPrediction(Resource):
 
     @api.expect(parser)
     def post(self):
-        """Anonymisatioin
+        """Anonymisation
 
         Image can be loaded either by using an internet URL in the url field or
         by using a local stored image in the image field

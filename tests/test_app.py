@@ -43,7 +43,8 @@ def test_predict_url(app, url_clio):
     resp_data = eval(resp.get_data(as_text=True))
     assert_clio(resp_data)
 
-def test_predict_url(app, url_pompier):
+
+def test_predict_prio_url(app, url_pompier):
     with app.test_client() as c:
         resp = c.post(
             '/matchvec/predict',
@@ -54,3 +55,16 @@ def test_predict_url(app, url_pompier):
     # Test with an image
     resp_data = eval(resp.get_data(as_text=True))
     assert_pompier(resp_data)
+
+def test_predict_anonym_url(app, url_anonym):
+    with app.test_client() as c:
+        resp = c.post(
+            '/matchvec/anonym',
+            content_type = 'multipart/form-data',
+            data = {'url':url_anonym})
+        print(resp.get_data(as_text=False)[0])
+
+    # Test with an image
+    resp_data = eval(resp.get_data(as_text=True))
+    assert sum(['plate' in obj['label'] for obj in resp_data[0]]) == 1, 'Some plates are missing'
+    assert sum(['person' in obj['label'] for obj in resp_data[0]]) == 1, 'Some persons are missing'

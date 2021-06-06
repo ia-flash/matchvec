@@ -5,9 +5,12 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 import base64
 
 path_clio4 = "tests/clio4.jpg"
+path_clio_peugeot = "tests/clio-peugeot.jpg"
+
 path_bmw = "tests/bmw.png"
 url_clio3 = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Renault_Clio_III_20090527_front.JPG/800px-Renault_Clio_III_20090527_front.JPG"
 url_pompier_fpt = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Renault_C-Truck.jpg/330px-Renault_C-Truck.jpg"
+url_anonym_mazda = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Mazda_CX5.JPG/1079px-Mazda_CX5.JPG"
 
 @pytest.fixture
 def app():
@@ -34,8 +37,18 @@ def url_pompier():
     yield url_pompier_fpt
 
 @pytest.fixture
+def url_anonym():
+    yield url_anonym_mazda
+
+@pytest.fixture
 def img_clio4():
     img = cv2.imread(path_clio4) # BGR
+    img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
+    yield img
+
+@pytest.fixture
+def img_clio_peugeot():
+    img = cv2.imread(path_clio_peugeot) # BGR
     img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
     yield img
 
