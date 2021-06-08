@@ -1,8 +1,8 @@
 swagger: "2.0"
 info:
-  description: "Use this API to obtain the make and model of an vehicule image and emergency vehicles classification"
+  description: "Use this API to obtain the make and model of an vehicule image and emergency vehicles classification, and to get anonymisation images"
   version: "2.0.0"
-  title: "Matchvec-prio API"
+  title: "Matchvec-prio-anonym API"
 host: "iaflash.fr"
 basePath: "/v1"
 schemes:
@@ -53,7 +53,7 @@ paths:
         type: "aws_proxy"
         httpMethod: "POST"
         # Replace AWS_REGION and ACCOUNT_ID in uri
-        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:MatchvecFunctionPrio/invocations"
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:016363657960:function:MatchvecFunctionPrioAno/invocations"
 
     options:
       responses:

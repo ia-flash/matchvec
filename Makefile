@@ -90,7 +90,7 @@ layers:
 layer: layers
 	$(COMPOSE) exec matchvec pip3 install pandas==0.24.2 -t layers/pandas/python
 	$(COMPOSE) exec matchvec pip3 install opencv-python-headless==4.0.0.21 -t layers/opencv/python
-	$(COMPOSE) exec matchvec pip3 install onnx==1.5.0 onnxruntime==0.4.0 -t layers/onnx/python
+	$(COMPOSE) exec matchvec pip3 install onnx==1.9.0 onnxruntime==1.5.1 -t layers/onnx/python
 	$(COMPOSE) exec matchvec pip3 install Pillow==6.1.0 requests-toolbelt==0.9.1 -t layers/pillow/python
 	cd layers/pandas; zip -r pandas.zip python; cd ../..;
 	cd layers/opencv; zip -r opencv.zip python; cd ../..;
@@ -113,7 +113,7 @@ layer_publish:
 
 sam_build:
 	rm -rf aws_lambda/matchvec
-	cp matchvec aws_lambda -r;cd aws_lambda;sam build
+	cp matchvec aws_lambda -r;cd aws_lambda;rm -rf __pycache__;sam build
 
 sam_local:
 	sam local start-api
@@ -131,11 +131,11 @@ sam_local:
 # sam local invoke  -e api-event.json
 
 sam_package:
-	sam package --template-file aws_lambda/template.yaml --s3-bucket iaflash --output-template-file aws_lambda/packaged-prio.yaml
+	sam package --template-file aws_lambda/template.yaml --s3-bucket iaflash --output-template-file aws_lambda/packaged-anonym.yaml
 
 sam_deploy:
-	aws cloudformation delete-stack --stack-name matchvec-prio;sleep 15;\
-	aws cloudformation deploy --template-file aws_lambda/packaged-prio.yaml --stack-name matchvec-prio
+	aws cloudformation delete-stack --stack-name matchvec-anonym;sleep 15;\
+	aws cloudformation deploy --template-file aws_lambda/packaged-anonym.yaml --stack-name matchvec-anonym
 	aws apigateway get-rest-apis
 
 # test aws lambda

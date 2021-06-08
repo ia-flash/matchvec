@@ -70,8 +70,7 @@ class Classifier(BaseModel):
             img /= np.array([0.229, 0.224, 0.225])[:, None, None]
 
             X.append(img)
-
-        res = self.session.run([self.output_name], {self.input_name: np.array(X)})
+        res = self.session.run(None, {self.input_name: np.array(X)})
 
         norm_output = softmax(res[0])
 

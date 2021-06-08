@@ -11,13 +11,18 @@ def test_apidoc(app):
         assert response.status == '308 PERMANENT REDIRECT'
 
 
-def test_class(img_clio4):
+def test_class(img_clio4, img_clio_peugeot):
+    print('Testing image', img_clio_peugeot.shape)
+    res = predict_class(img_clio_peugeot)
+    for modele in ['CLIO', '208', 'A1', 'MINI']:
+        assert any([modele in vehicule['brand_model_classif']['label'] for vehicule in res]), 'There is no clio in first predictions'
 
     print('Testing image', img_clio4.shape)
     res = predict_class(img_clio4)
-
     assert type(res) == list
     assert any(['CLIO' in vehicule['brand_model_classif']['label'] for vehicule in res]), 'There is no clio in first predictions'
+
+
 
 
 def test_class_prio(img_clio4):
@@ -43,10 +48,20 @@ def test_anonym(img_clio_peugeot):
         res = predict_anonym(img_clio_peugeot)
         assert sum(['plate' in obj['label'] for obj in res]) == 4, 'Some plates are missing'
         assert sum(['person' in obj['label'] for obj in res]) == 1, 'Some persons are missing'
-
     else:
         print('!!!! Test not executed, add ANONYM_MODEL path !!!!!')
 
 def test_object(img_clio4):
+    # pytest tests/test_process.py::test_object -s
     res = predict_objects(img_clio4)
     assert type(res) == list
+    assert len(res) == 1
+    assert res[0]['class_name'] == 'car'
+    assert float(res[0]['confidence']) >= 0.95
+
+
+def test_several_object(img_clio_peugeot):
+    # pytest tests/test_process.py::test_object -s
+    res = predict_objects(img_clio_peugeot)
+    assert type(res) == list
+    assert len(res) == 5

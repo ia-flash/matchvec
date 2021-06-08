@@ -2,7 +2,6 @@
 import os
 import cv2
 import numpy as np
-import pandas as pd
 import torch
 import mmcv
 from mmdet.models import build_detector
@@ -74,9 +73,9 @@ def det_bboxes(bboxes,
         label_text = class_names[
             label] if class_names is not None else 'cls {}'.format(label)
 
-        to_save.append({'x1':bbox_int[0],'y1':bbox_int[1],
-                        'x2':bbox_int[2],'y2':bbox_int[3],
-                        'class_name':label_text,'confidence':bbox[-1]})
+        to_save.append({'x1': int(bbox_int[0]),'y1':int(bbox_int[1]),
+                        'x2':int(bbox_int[2]),'y2':int(bbox_int[3]),
+                        'class_name':label_text,'confidence':float(bbox[-1])})
 
     return to_save
 
@@ -166,8 +165,8 @@ class Detector():
         return result
 
     def create_df(self, result: List[np.ndarray],
-                  image: np.ndarray) -> pd.DataFrame:
-        """Filter predictions and create an output DataFrame
+                  image: np.ndarray) -> List[dict]:
+        """Filter predictions and create an output list of dictionary
 
         Args:
             result: Result from prediction model
@@ -177,18 +176,17 @@ class Detector():
             df: Onject detection predictions filtered
         """
         height, width = image.shape[:-1]
-        res = save_result(result,
+        df = save_result(result,
                     dataset='anonym',
                     score_thr=DETECTION_THRESHOLD)
-        df = pd.DataFrame(res)
-        if len(df) > 0:
-            df['label'] = df['class_name'] + ' : ' + df['confidence'].astype(str).str.slice(stop=4)
+        for i, row in enumerate(df):
+            df[i]['label'] = row['class_name'] +' : ' + str(round(row['confidence'],4))
         return df
 
 
     def batch_create_df(self, result: List[List[np.ndarray]],
-                        image: List[np.ndarray]) -> List[pd.DataFrame]:
-        """Filter predictions and create an output DataFrame
+                        image: List[np.ndarray]) -> List[dict]:
+        """Filter predictions and create an output list of dictionary
 
         Args:
             result: Result from prediction model
@@ -204,9 +202,9 @@ class Detector():
 
         return df
 
-    def detect_band(self, df: pd.DataFrame,
-                  image: np.ndarray) -> pd.DataFrame:
-        """Filter predictions and create an output DataFrame
+    def detect_band(self, df: List[dict],
+                  image: np.ndarray) -> List[dict]:
+        """Filter predictions and create an output list
 
         Args:
             result: Result from prediction model
@@ -218,8 +216,8 @@ class Detector():
         height, width = image.shape[:-1]
         new_width, new_height = cut_down(image, width, height)
         if (new_height != height):
-            df_band = pd.DataFrame([{'x1': 0, 'y1': new_height, 'x2': width, 'y2': height, 'class_name': 'band', 'confidence': 1, 'label': 'band'}])
-            df = pd.concat([df, df_band])
+            df_band = [{'x1': 0, 'y1': new_height, 'x2': width, 'y2': height, 'class_name': 'band', 'confidence': 1, 'label': 'band'}]
+            df += df_band
         return df
 
 if __name__ == '__main__':

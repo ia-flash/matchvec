@@ -8,7 +8,7 @@ docs/build
 celery.pid
 celeryd.pid
 .aws-sam
-packaged.yaml
+aws_lambda/packaged*.yaml
 sam*
 aws_lambda/matchvec
 swagger.json
