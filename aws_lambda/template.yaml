@@ -9,7 +9,7 @@ Description: >
 Globals:
   Function:
     Timeout: 200
-    MemorySize: 512
+    MemorySize: 1024
     Environment:
       Variables:
         BACKEND: onnx
@@ -38,9 +38,9 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
       Layers:
-          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:onnx:2
-          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:opencv:2
-          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:pillow:7
+          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:onnxruntime:1
+          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:opencv:3
+          - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:pillow:8
       Events:
         PostEvent:
           Type: Api

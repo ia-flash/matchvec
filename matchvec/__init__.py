@@ -4,7 +4,7 @@ matchvec
 =================
 """
 
-from .process import predict_class, predict_objects
+from .process import predict_class, predict_objects, predict_anonym
 
 __title__ = 'matchvec'
 __authors__ = 'Cristian Brokate, Victor Journe'

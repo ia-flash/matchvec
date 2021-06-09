@@ -6,7 +6,7 @@ import base64
 import numpy as np
 import cv2
 from PIL import Image
-from matchvec import predict_class, predict_objects
+from matchvec import predict_class, predict_objects, predict_anonym
 from urllib.request import urlopen
 from requests_toolbelt.multipart import decoder
 
@@ -45,6 +45,8 @@ def lambda_handler_classification(event, context):
         infer_func = predict_class
     elif event['path'] == '/object_detection':
         infer_func = predict_objects
+    elif event['path'] == '/anonym':
+        infer_func = predict_anonym
     else:
         return {
                 'headers': {
