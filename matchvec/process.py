@@ -89,7 +89,7 @@ def filter_by_size(df: List[dict], image: np.ndarray) -> dict:
 
 def filter_by_iou(df: dict) -> dict:
     """Filter box of car and truck when IoU>DETECTION_IOU_THRESHOLD
-
+    If a car and a truck overlap, take in priority the car box!
     Args:
         df: Detected boxes
 
