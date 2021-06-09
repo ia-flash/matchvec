@@ -3,7 +3,8 @@ import os
 import cv2
 import json
 import numpy as np
-import pandas as pd
+from typing import List, Union
+
 from matchvec.utils import timeit
 from matchvec.BaseModel import BaseModel
 
@@ -56,8 +57,8 @@ class Detector(BaseModel):
         result = cvOut[0, 0, :, :]
         return result
 
-    def create_df(self, result: np.ndarray, image: np.ndarray) -> pd.DataFrame:
-        """Filter predictions and create an output DataFrame
+    def create_df(self, result: np.ndarray, image: np.ndarray) -> List[dict]:
+        """Filter predictions and create an output dictionary
 
         Args:
             result: Result from prediction model
@@ -67,22 +68,23 @@ class Detector(BaseModel):
             df: Object detection filtered predictions
         """
         height, width = image.shape[:-1]
-        df = pd.DataFrame(
-                result,
-                columns=[
-                    '_', 'class_id', 'confidence', 'x1', 'y1', 'x2', 'y2'])
-        df = df.assign(
-                x1=lambda x: (x['x1'] * width).astype(int).clip(0),
-                y1=lambda x: (x['y1'] * height).astype(int).clip(0),
-                x2=lambda x: (x['x2'] * width).astype(int),
-                y2=lambda x: (x['y2'] * height).astype(int),
-                class_name=lambda x: (
-                    x['class_id'].astype(int).astype(str).replace(self.class_name)),
-                label=lambda x: (
-                    x.class_name + ': ' + (
-                        x['confidence'].astype(str).str.slice(stop=4)
-                        )
-                    )
-                )
-        df = df[df['confidence'] > DETECTION_THRESHOLD]
+        df = []
+        for row in result:
+            confidence=row[2]
+            if confidence > DETECTION_THRESHOLD:
+                class_name = self.class_name[row[1].astype(int).astype(str)]
+                x1 = (row[3]* width).astype(int).clip(0)
+                y1 = (row[4]* height).astype(int).clip(0)
+                x2 = (row[5]* width).astype(int)
+                y2 = (row[6]* height).astype(int)
+                label = class_name + ': ' + confidence.round(4).astype(str)
+                df += [dict(x1=int(x1),
+                            y1=int(y1),
+                            x2=int(x2),
+                            y2=int(y2),
+                            class_name=class_name,
+                            label=label,
+                            confidence=float(confidence))]
+
+
         return df

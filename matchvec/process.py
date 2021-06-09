@@ -2,7 +2,6 @@ import os
 import cv2
 import logging
 import numpy as np
-import pandas as pd
 from PIL import Image
 from importlib import import_module
 from itertools import combinations, product
@@ -37,7 +36,7 @@ DETECTION_IOU_THRESHOLD = 0.9
 DETECTION_SIZE_THRESHOLD = 0.01
 
 
-def IoU(boxA: pd.Series, boxB: pd.Series) -> float:
+def IoU(boxA: dict, boxB: dict) -> float:
     """ Calculate IoU
 
     Args:
@@ -49,6 +48,8 @@ def IoU(boxA: pd.Series, boxB: pd.Series) -> float:
     yA = max(boxA['y1'], boxB['y1'])
     xB = min(boxA['x2'], boxB['x2'])
     yB = min(boxA['y2'], boxB['y2'])
+    surf_boxA = (boxA['x2'] - boxA['x1']) * (boxA['y2'] - boxA['y1'])
+    surf_boxB = (boxB['x2'] - boxB['x1']) * (boxB['y2'] - boxB['y1'])
 
     # compute the area of intersection rectangle
     interArea = max(0, xB - xA + 1) * max(0, yB - yA + 1)
@@ -56,13 +57,13 @@ def IoU(boxA: pd.Series, boxB: pd.Series) -> float:
     # compute the intersection over union by taking the intersection
     # area and dividing it by the sum of prediction + ground-truth
     # areas - the interesection area
-    iou = interArea / float(boxA['surf_box'] + boxB['surf_box'] - interArea)
+    iou = interArea / float(surf_boxA + surf_boxB - interArea)
 
     # return the intersection over union value
     return iou
 
 
-def filter_by_size(df: pd.DataFrame, image: np.ndarray) -> pd.DataFrame:
+def filter_by_size(df: List[dict], image: np.ndarray) -> dict:
     """Filter box too small
 
     Args:
@@ -74,43 +75,41 @@ def filter_by_size(df: pd.DataFrame, image: np.ndarray) -> pd.DataFrame:
     """
     height, width = image.shape[:-1]
     surf = width * height
-    df = df.assign(
-            mean_x=lambda x: x[['x1', 'x2']].mean(axis=1),
-            mean_y=lambda x: x[['y1', 'y2']].mean(axis=1),
-            dist=lambda x: (
-                ((width/2 - x['mean_x']) ** 2 +
-                    (height/2 - x['mean_y'])**2).pow(1./2)),
-            surf_box=lambda x: (x['x2'] - x['x1']) * (x['y2'] - x['y1']),
-            surf_ratio=lambda x: x['surf_box'] / surf
-            )
-    df = df[(df['surf_ratio'] > DETECTION_SIZE_THRESHOLD)]
+    for i, row in enumerate(df.copy()):
+        mean_x = (row['x1'] + row['x2'])/ 2.
+        mean_y = (row['y1'] + row['y2'])/ 2.
+        dist = ((width/2 - mean_x) ** 2 + (height/2 - mean_y)**2)**(1./2)
+        surf_box = (row['x2'] - row['x1']) * (row['y2'] - row['y1'])
+        surf_ratio = surf_box / surf
+        if surf_ratio < DETECTION_SIZE_THRESHOLD:
+            df.pop(i)
+
     return df
 
 
-def filter_by_iou(df: pd.DataFrame) -> pd.DataFrame:
+def filter_by_iou(df: dict) -> dict:
     """Filter box of car and truck when IoU>DETECTION_IOU_THRESHOLD
-
+    If a car and a truck overlap, take in priority the car box!
     Args:
         df: Detected boxes
 
     Returns:
         df: Filtered boxes
     """
-    df['surf_box'] = (df['x2'] - df['x1']) * (df['y2'] - df['y1'])
-    df_class = df[df['class_name'].isin(['car', 'truck'])].groupby('class_name')
-    prod_class = combinations(df_class, 2)
-    id_to_drop: List = list()
-    for (class_a, df_a), (class_b, df_b) in prod_class:
-        for (id1, vec1), (id2, vec2) in product(df_a.iterrows(), df_b.iterrows()):
-            iou = IoU(vec1, vec2)
+    df_class = {'car': [], 'truck':[] }
+    for i, row in enumerate(df):
+        df[i].update(dict(id=i))
+        if row['class_name'] in ['car', 'truck']:
+            df_class[row['class_name']].append(row)
+    prod_class = combinations(df_class.items(), 2)
+    for (class_a, df_a_group), (class_b, df_b_group) in prod_class:
+        for df_a, df_b in product(df_a_group, df_b_group):
+            iou = IoU(df_a, df_b)
             if iou > DETECTION_IOU_THRESHOLD:
-                # print('drop truck')
                 if class_a == 'truck':
-                    id_to_drop += [id1]
+                    df.pop(df_a['id'])
                 elif class_b == 'truck':
-                    id_to_drop += [id2]
-    # drop trucks overlapping car
-    df = df.drop(id_to_drop)
+                    df.pop(df_b['id'])
     return df
 
 
@@ -126,13 +125,12 @@ def predict_objects(img: np.ndarray) -> List[Union[str, float]]:
     """
     result = detector.prediction(img)
     df = detector.create_df(result, img)
-
     df = filter_by_size(df, img)
-
     df = filter_by_iou(df)
 
     cols = ['x1', 'y1', 'x2', 'y2', 'class_name', 'confidence', 'label']
-    return df[cols].to_dict(orient='records')
+
+    return [dict((k, row[k]) for k in cols) for row in df]
 
 
 @timeit
@@ -151,14 +149,16 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
     df = detector.create_df(result, img)
 
     # Filter by class
-    df = df[(df['class_name'] == 'car') | (df['class_name'] == 'truck')]
+    for i, row in enumerate(df.copy()):
+        if row['class_name'] not in ['car', 'truck']:
+            df.pop(i)
     df = filter_by_iou(df)
 
     #Image.fromarray(img).convert('RGB').save('/app/debug/classif_input.jpg')
     selected_boxes = list(
             zip(
                 [Image.fromarray(img)]*len(df),
-                df[['x1', 'y1', 'x2', 'y2']].values.tolist()
+                [[row[col] for col in ['x1', 'y1', 'x2', 'y2']] for row in df]
                 )
             )
 
@@ -169,7 +169,7 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
     if len(selected_boxes) > 0:
 
         pred, prob = classifier.prediction(selected_boxes)
-        for i, obj in enumerate(df[cols].to_dict(orient="records")):
+        for i, obj in enumerate([dict((k, row[k]) for k in cols) for row in df]):
             obj.update({
                             "brand_model_classif": {
                                 "pred": pred[i],
@@ -209,7 +209,8 @@ def predict_anonym(img: np.ndarray) -> List[Union[str, float]]:
     df = detector_anonym.detect_band(df, img)
     if len(df) > 0:
         cols = ['x1', 'y1', 'x2', 'y2', 'class_name', 'confidence', 'label']
-        return df[cols].to_dict(orient='records')
+        return [dict((k, row[k]) for k in cols) for row in df]
+
     else:
         return None
 

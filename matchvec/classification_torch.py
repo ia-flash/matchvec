@@ -26,7 +26,7 @@ class DatasetList(torch.utils.data.Dataset):
                  transform=None, target_transform=None):
         self.samples = samples
         if len(samples) == 0:
-            raise(RuntimeError("Found 0 files in dataframe"))
+            raise(RuntimeError("Found 0 files in list of dictionary"))
 
         self.transform = transform
         self.target_transform = target_transform

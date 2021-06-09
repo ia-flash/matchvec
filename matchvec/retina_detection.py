@@ -2,7 +2,6 @@
 import os
 import cv2
 import numpy as np
-import pandas as pd
 import torch
 import mmcv
 from mmdet.models import build_detector
@@ -155,8 +154,8 @@ class Detector():
         return result
 
     def create_df(self, result: List[np.ndarray],
-                  image: np.ndarray) -> pd.DataFrame:
-        """Filter predictions and create an output DataFrame
+                  image: np.ndarray) -> List[dict]:
+        """Filter predictions and create an output list of dictionary
 
         Args:
             result: Result from prediction model
@@ -170,14 +169,15 @@ class Detector():
                     class_to_keep=class_to_keep,
                     dataset='coco',
                     score_thr=DETECTION_THRESHOLD)
-        df = pd.DataFrame(df)
-        df['label'] = df['class_name'] +' : ' + df['confidence'].astype(str).str.slice(stop=4)
+
+        for i, row in enumerate(df):
+            df[i]['label'] = row['class_name'] +' : ' + str(round(row['confidence'],4))
 
         return df
 
     def batch_create_df(self, result: List[List[np.ndarray]],
-                        image: List[np.ndarray]) -> List[pd.DataFrame]:
-        """Filter predictions and create an output DataFrame
+                        image: List[np.ndarray]) -> List[dict]:
+        """Filter predictions and create an output list of dictionary
 
         Args:
             result: Result from prediction model

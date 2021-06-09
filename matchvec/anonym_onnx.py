@@ -2,12 +2,12 @@
 import os
 import cv2
 import numpy as np
-import pandas as pd
 import onnxruntime
 
 from typing import List
 from matchvec.utils import timeit, logger
 from matchvec.BaseModel import BaseModel
+from typing import List, Union
 
 
 DETECTION_MODEL = os.getenv('ANONYM_MODEL')
@@ -40,7 +40,9 @@ def imnormalize_(img, mean, std, to_rgb=True):
         mean (ndarray): The mean to be used for normalize.
         std (ndarray): The std to be used for normalize.
         to_rgb (bool): Whether to convert to rgb.
-
+    dst_path = os.path.join(
+            os.environ['BASE_MODEL_PATH'], DETECTION_MODEL)
+        src_path = DETECTION_MODEL
     Returns:
         ndarray: The normalized image.
     """
@@ -117,9 +119,9 @@ def det_bboxes(bboxes,
         label_text = class_names[
             label] if class_names is not None else 'cls {}'.format(label)
 
-        to_save.append({'x1':bbox_int[0],'y1':bbox_int[1],
-                        'x2':bbox_int[2],'y2':bbox_int[3],
-                        'class_name':label_text,'confidence':bbox[-1]})
+        to_save.append({'x1': int(bbox_int[0]),'y1': int(bbox_int[1]),
+                        'x2': int(bbox_int[2]),'y2': int(bbox_int[3]),
+                        'class_name':label_text,'confidence':float(bbox[-1])})
 
     return to_save
 
@@ -208,26 +210,25 @@ class Detector(BaseModel):
             result.append(one_result)
         return result
 
-    def create_df(self, result: List[np.ndarray]) -> pd.DataFrame:
-        """Filter predictions and create an output DataFrame
+    def create_df(self, result: List[np.ndarray]) -> List[dict]:
+        """Filter predictions and create an output dictionary
 
         Args:
             result: Result from prediction model
 
         Returns:
-            df: Onject detection predictions filtered
+            df: Object detection predictions filtered
         """
-        res = save_result(result,
+        df = save_result(result,
                     score_thr=DETECTION_THRESHOLD)
 
-        df = pd.DataFrame(res)
-        if len(df) > 0:
-            df['label'] = df['class_name'] + ' : ' + df['confidence'].astype(str).str.slice(stop=4)
+        for i, row in enumerate(df):
+            label = row['class_name'] + ': ' + str(round(row['confidence'],4))
+            df[i].update(dict(label=label))
         return df
 
-
-    def batch_create_df(self, result: List[List[np.ndarray]]) -> List[pd.DataFrame]:
-        """Filter predictions and create an output DataFrame
+    def batch_create_df(self, result: List[List[np.ndarray]]) -> List[List[dict]]:
+        """Filter predictions and create an output list of dictionary
 
         Args:
             result: Result from prediction model
@@ -243,9 +244,9 @@ class Detector(BaseModel):
 
         return df
 
-    def detect_band(self, df: pd.DataFrame,
-                  image: np.ndarray) -> pd.DataFrame:
-        """Filter predictions and create an output DataFrame
+    def detect_band(self, df: List[dict],
+                  image: np.ndarray) -> List[dict]:
+        """Filter predictions and create an output list
 
         Args:
             result: Result from prediction model
@@ -257,8 +258,8 @@ class Detector(BaseModel):
         height, width = image.shape[:-1]
         new_width, new_height = cut_down(image, width, height)
         if (new_height != height):
-            df_band = pd.DataFrame([{'x1': 0, 'y1': new_height, 'x2': width, 'y2': height, 'class_name': 'band', 'confidence': 1, 'label': 'band'}])
-            df = pd.concat([df, df_band])
+            df_band = [{'x1': 0, 'y1': new_height, 'x2': width, 'y2': height, 'class_name': 'band', 'confidence': 1, 'label': 'band'}]
+            df += df_band
         return df
 
 if __name__ == '__main__':

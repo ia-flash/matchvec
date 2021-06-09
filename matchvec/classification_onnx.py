@@ -26,14 +26,14 @@ class Classifier(BaseModel):
 
     @timeit
     def __init__(self, classification_model):
-        self.files = ['classifcation_model.onnx', 'idx_to_class.json']
+        self.files = ['classifcation_model_onnx1.5.onnx', 'idx_to_class.json']
         dst_path = os.path.join(
             os.environ['BASE_MODEL_PATH'], classification_model)
         src_path = classification_model
 
         self.download_model_folder(dst_path, src_path)
 
-        self.session = onnxruntime.InferenceSession(os.path.join(dst_path, "classifcation_model.onnx"))
+        self.session = onnxruntime.InferenceSession(os.path.join(dst_path, "classifcation_model_onnx1.5.onnx"))
         self.output_name = self.session.get_outputs()[0].name
         self.input_name = self.session.get_inputs()[0].name
 
@@ -70,8 +70,7 @@ class Classifier(BaseModel):
             img /= np.array([0.229, 0.224, 0.225])[:, None, None]
 
             X.append(img)
-
-        res = self.session.run([self.output_name], {self.input_name: np.array(X)})
+        res = self.session.run(None, {self.input_name: np.array(X)})
 
         norm_output = softmax(res[0])
 
