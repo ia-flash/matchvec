@@ -75,14 +75,15 @@ def filter_by_size(df: List[dict], image: np.ndarray) -> dict:
     """
     height, width = image.shape[:-1]
     surf = width * height
-    for i, row in enumerate(df.copy()):
+    df_filtered = []
+    for i, row in df:
         mean_x = (row['x1'] + row['x2'])/ 2.
         mean_y = (row['y1'] + row['y2'])/ 2.
         dist = ((width/2 - mean_x) ** 2 + (height/2 - mean_y)**2)**(1./2)
         surf_box = (row['x2'] - row['x1']) * (row['y2'] - row['y1'])
         surf_ratio = surf_box / surf
-        if surf_ratio < DETECTION_SIZE_THRESHOLD:
-            df.pop(i)
+        if surf_ratio >= DETECTION_SIZE_THRESHOLD:
+            df_filtered.append(df[i])
 
     return df
 
@@ -125,8 +126,8 @@ def predict_objects(img: np.ndarray) -> List[Union[str, float]]:
     """
     result = detector.prediction(img)
     df = detector.create_df(result, img)
-    df = filter_by_size(df, img)
-    df = filter_by_iou(df)
+    #df = filter_by_size(df, img)
+    #df = filter_by_iou(df)
 
     cols = ['x1', 'y1', 'x2', 'y2', 'class_name', 'confidence', 'label']
 
@@ -147,11 +148,10 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
 
     result = detector.prediction(img)
     df = detector.create_df(result, img)
+    print(df)
 
     # Filter by class
-    for i, row in enumerate(df.copy()):
-        if row['class_name'] not in ['car', 'truck']:
-            df.pop(i)
+    df = [row for row in df if row['class_name'] in ['car', 'truck']]
     df = filter_by_iou(df)
 
     #Image.fromarray(img).convert('RGB').save('/app/debug/classif_input.jpg')
