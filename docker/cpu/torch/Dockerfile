@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM python:3.9.5
 
 COPY ./matchvec /app/matchvec
 COPY ./setup.py /app
