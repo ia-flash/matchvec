@@ -1,6 +1,6 @@
 Flask==1.0.2
 numpy==1.16.2
-opencv-python-headless==4.0.0.21
+opencv-python-headless==4.2.0.32
 torchvision==0.2.2.post3
 Sphinx==2.0.1
 sphinx-autodoc-typehints==1.6.0
