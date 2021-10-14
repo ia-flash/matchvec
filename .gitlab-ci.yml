@@ -65,6 +65,7 @@ staging:
   script:
     - if [ -z $MODEL_NAME ]; then echo "MODEL_NAME not set"; exit 1; fi
     - if [ -z $MODEL_VERSION ]; then echo "MODEL_VERSION not set"; exit 1; fi
+    - if [ -z $MODEL_BACKEND ]; then echo "MODEL_BACKEND not set"; exit 1; fi
     - if [ -z $INSTALL_DIR ]; then echo "INSTALL_DIR not set"; exit 1; fi
     - if [ -z $APP_PORT ]; then echo "APP_PORT not set"; exit 1; fi
     - ipath=${INSTALL_DIR}/${VERSION_TAG}
@@ -75,14 +76,12 @@ staging:
     - pip3 install -U pip
     #- echo "manylinux1_compatible = True" > _manylinux.py # Pour forcer l'utilisation de manylinux1 car avec python_levenshtein_wheels, y'a un souci avec version plus récente
     - pip3 install dist/${CI_PROJECT_NAME}*.whl
-    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/sivnorm_referentiel/${MODEL_VERSION}/sivnorm_referentiel.tar -o sivnorm_referentiel.tar'
+    #- 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/sivnorm_referentiel/${MODEL_VERSION}/sivnorm_referentiel.tar -o sivnorm_referentiel.tar'
     - mkdir $ipath/models
-    - tar xvf sivnorm_referentiel.tar -C $ipath/models
-    - echo -e "[config]\nBASE_MODEL_PATH=$ipath/models/${MODEL_NAME}\nAPP_PORT=${APP_PORT}\n" > $ipath/config.ini
+   # - tar xvf sivnorm_referentiel.tar -C $ipath/models
+    - echo -e "[config]\MODEL_PATH=$ipath/models\nAPP_PORT=${APP_PORT}\nBACKEND=${MODEL_BACKEND}\n" > $ipath/config.ini
     - rm -rf ${INSTALL_DIR}/current
     - ln -s $ipath ${INSTALL_DIR}/current
   tags:
     - python-dinp-tscapx004r
   
-  only:
-    - tags
