@@ -80,7 +80,7 @@ staging:
     - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/object_detection/${MODEL_VERSION}/yolov3.weights -o $ipath/models/${DETECTION_MODEL}/yolov3.weights'
     - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/object_detection/${MODEL_VERSION}/yolov3.cfg -o $ipath/models/${DETECTION_MODEL}/yolov3.cfg'
     - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/object_detection/${MODEL_VERSION}/labels.json -o $ipath/models/${DETECTION_MODEL}/labels.json'
-    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classification/${MODEL_VERSION}/classifcation_model.onnx -o $ipath/models/${CLASSIFICATION_MODEL}/classifcation_model_onnx1.5.onnx'
+    - '[ $(curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classification/${MODEL_VERSION}/classifcation_model.onnx -o $ipath/models/${CLASSIFICATION_MODEL}/classifcation_model_onnx1.5.onnx) -eq 200 ] || exit 1'
     - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classification/${MODEL_VERSION}/idx_to_class.json -o $ipath/models/${CLASSIFICATION_MODEL}/idx_to_class.json'
     - echo -e "export BACKEND=${BACKEND}\nexport DETECTION_MODEL=${DETECTION_MODEL}\nexport DETECTION_THRESHOLD=0.8\nexport CLASSIFICATION_MODEL=${CLASSIFICATION_MODEL}\nexport BASE_MODEL_PATH=$ipath/models" > $ipath/setenv.sh
     - chmod +x $ipath/setenv.sh
