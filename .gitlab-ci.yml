@@ -64,6 +64,7 @@ staging:
   script:
     - if [ -z $DETECTION_MODEL ]; then echo "DETECTION_MODEL not set"; exit 1; fi
     - if [ -z $DETECTION_THRESHOLD ]; then echo "DETECTION_THRESHOLD not set"; exit 1; fi
+    - if [ -z $CLASSIFICATION_MODEL ]; then echo "CLASSIFICATION_MODEL not set"; exit 1; fi
     - if [ -z $BACKEND ]; then echo "BACKEND not set"; exit 1; fi
     - if [ -z $INSTALL_DIR ]; then echo "INSTALL_DIR not set"; exit 1; fi
     #- if [ -z $APP_PORT ]; then echo "APP_PORT not set"; exit 1; fi
@@ -75,11 +76,13 @@ staging:
     - pip3 install -U pip
     - pip3 install dist/${CI_PROJECT_NAME}*.whl
     - mkdir -p $ipath/models/${DETECTION_MODEL}
+    - mkdir -p $ipath/models/${CLASSIFICATION_MODEL}
     - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/object_detection/${MODEL_VERSION}/yolov3.weights -o $ipath/models/${DETECTION_MODEL}/yolov3.weights'
     - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/object_detection/${MODEL_VERSION}/yolov3.cfg -o $ipath/models/${DETECTION_MODEL}/yolov3.cfg'
     - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/object_detection/${MODEL_VERSION}/labels.json -o $ipath/models/${DETECTION_MODEL}/labels.json'
-    #- 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classification/${MODEL_VERSION}/labels.json -o $ipath/models/${DETECTION_MODEL}/labels.json'
-    - echo -e "export BACKEND=${BACKEND}\nexport DETECTION_MODEL=${DETECTION_MODEL}\nexport DETECTION_THRESHOLD=0.8\nexport BASE_MODEL_PATH=$ipath/models" > $ipath/setenv.sh
+    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classification/${MODEL_VERSION}/classifcation_model.onnx -o $ipath/models/${CLASSIFICATION_MODEL}/classifcation_model_onnx1.5.onnx'
+    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classification/${MODEL_VERSION}/idx_to_class.json -o $ipath/models/${CLASSIFICATION_MODEL}/idx_to_class.json'
+    - echo -e "export BACKEND=${BACKEND}\nexport DETECTION_MODEL=${DETECTION_MODEL}\nexport DETECTION_THRESHOLD=0.8\nexport CLASSIFICATION_MODEL=${CLASSIFICATION_MODEL}\nexport BASE_MODEL_PATH=$ipath/models" > $ipath/setenv.sh
     - chmod +x $ipath/setenv.sh
     - rm -rf ${INSTALL_DIR}/current
     - ln -s $ipath ${INSTALL_DIR}/current
