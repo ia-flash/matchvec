@@ -77,8 +77,8 @@ staging:
     - pip3 install -U pip
     #- echo "manylinux1_compatible = True" > _manylinux.py # Pour forcer l'utilisation de manylinux1 car avec python_levenshtein_wheels, y'a un souci avec version plus récente
     - pip3 install dist/${CI_PROJECT_NAME}*.whl
-    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classificatin/${MODEL_VERSION}/classification_model.onnx -o $ipath/models/classification_model.onnx'
     - mkdir $ipath/models
+    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classificatin/${MODEL_VERSION}/classification_model.onnx -o $ipath/models/classification_model.onnx'
    # - tar xvf sivnorm_referentiel.tar -C $ipath/models
    # - echo -e "[config]\MODEL_PATH=$ipath/models\nAPP_PORT=${APP_PORT}\nBACKEND=${MODEL_BACKEND}\n" > $ipath/config.ini
     - rm -rf ${INSTALL_DIR}/current
