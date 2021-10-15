@@ -4,7 +4,10 @@ from setuptools import setup, find_packages
 
 root_path = abspath(dirname(__file__))
 
-with open(join(root_path, 'requirements.txt')) as f:
+assert 'BACKEND' in os.environ
+assert 'GPU' in os.environ
+
+with open(join(root_path, 'gpu' if int(os.environ['GPU']) == 1 else 'cpu' , os.environ['BACKEND'], 'requirements.txt')) as f:
     REQUIREMENTS = [line.strip() for line in f]
 
 setup(name="matchvec", 
