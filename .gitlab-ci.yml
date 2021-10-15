@@ -32,7 +32,7 @@ build_wheel:
     - pip3 install -U pip
     - pip3 install wheel
     #- 'sed -ri "s/^python-Levenshtein==0\.12\.0/python-Levenshtein-wheels==0\.13\.2/" requirements.txt ' # Remplace python-Levenshtein-wheels
-    #- 'sed -ri "s/^sphinxcontrib-openapi=/#sphinxcontrib-openapi=/" requirements.txt'
+    - 'sed -ri "s/^sphinxcontrib-openapi=/#sphinxcontrib-openapi=/" requirements.txt'
     - python3 setup.py bdist_wheel
   artifacts:
     paths:
