@@ -64,7 +64,7 @@ staging:
   script:
     #- if [ -z $MODEL_NAME ]; then echo "MODEL_NAME not set"; exit 1; fi
     #- if [ -z $MODEL_VERSION ]; then echo "MODEL_VERSION not set"; exit 1; fi
-    #- if [ -z $MODEL_BACKEND ]; then echo "MODEL_BACKEND not set"; exit 1; fi
+    - if [ -z $BACKEND ]; then echo "BACKEND not set"; exit 1; fi
     - if [ -z $INSTALL_DIR ]; then echo "INSTALL_DIR not set"; exit 1; fi
     #- if [ -z $APP_PORT ]; then echo "APP_PORT not set"; exit 1; fi
     - ipath=${INSTALL_DIR}/${VERSION_TAG}
@@ -78,7 +78,9 @@ staging:
     - mkdir $ipath/models
     - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classificatin/${MODEL_VERSION}/classification_model.onnx -o $ipath/models/classification_model.onnx'
    # - tar xvf sivnorm_referentiel.tar -C $ipath/models
-   # - echo -e "[config]\MODEL_PATH=$ipath/models\nAPP_PORT=${APP_PORT}\nBACKEND=${MODEL_BACKEND}\n" > $ipath/config.ini
+    - echo -e "export BACKEND=${BACKEND}\nexport DETECTION_MODEL=$ipath/models\nexport DETECTION_THRESHOLD=0.8\n\
+    export BASE_MODEL_PATH=$ipath/models" > $ipath/setenv.sh
+    - chmod +x $ipath/setenv.sh
     - rm -rf ${INSTALL_DIR}/current
     - ln -s $ipath ${INSTALL_DIR}/current
   tags:
