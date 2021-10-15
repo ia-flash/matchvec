@@ -78,8 +78,7 @@ staging:
     - mkdir $ipath/models
     - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classificatin/${MODEL_VERSION}/classification_model.onnx -o $ipath/models/classification_model.onnx'
    # - tar xvf sivnorm_referentiel.tar -C $ipath/models
-    - echo -e "export BACKEND=${BACKEND}\nexport DETECTION_MODEL=$ipath/models\nexport DETECTION_THRESHOLD=0.8\n\
-    export BASE_MODEL_PATH=$ipath/models" > $ipath/setenv.sh
+    - echo -e "export BACKEND=${BACKEND}\nexport DETECTION_MODEL=$ipath/models\nexport DETECTION_THRESHOLD=0.8\nexport BASE_MODEL_PATH=$ipath/models" > $ipath/setenv.sh
     - chmod +x $ipath/setenv.sh
     - rm -rf ${INSTALL_DIR}/current
     - ln -s $ipath ${INSTALL_DIR}/current
