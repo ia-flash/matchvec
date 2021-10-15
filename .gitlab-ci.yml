@@ -73,11 +73,10 @@ staging:
     - python3 -m venv $ipath
     - source $ipath/bin/activate
     - pip3 install -U pip
-    #- echo "manylinux1_compatible = True" > _manylinux.py # Pour forcer l'utilisation de manylinux1 car avec python_levenshtein_wheels, y'a un souci avec version plus récente
     - pip3 install dist/${CI_PROJECT_NAME}*.whl
     - mkdir $ipath/models
-    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classificatin/${MODEL_VERSION}/classification_model.onnx -o $ipath/models/classification_model.onnx'
-   # - tar xvf sivnorm_referentiel.tar -C $ipath/models
+    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classification/${MODEL_VERSION}/classification_model.onnx -o $ipath/models/${DETECTION_MODEL}/classification_model.onnx'
+    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classification/${MODEL_VERSION}/labels.json -o $ipath/models/${DETECTION_MODEL}/labels.json'
     - echo -e "export BACKEND=${BACKEND}\nexport DETECTION_MODEL=${DETECTION_MODEL}\nexport DETECTION_THRESHOLD=0.8\nexport BASE_MODEL_PATH=$ipath/models" > $ipath/setenv.sh
     - chmod +x $ipath/setenv.sh
     - rm -rf ${INSTALL_DIR}/current
