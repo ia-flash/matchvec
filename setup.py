@@ -11,6 +11,7 @@ with open(join(root_path, 'docker', 'gpu' if int(environ['GPU']) == 1 else 'cpu'
     REQUIREMENTS = [line.strip() for line in f]
 
 setup(name="matchvec", 
+    version=environ['CI_COMMIT_TAG'],
     packages=find_packages(),
     install_requires=REQUIREMENTS,
     entry_points={'console_scripts': [
