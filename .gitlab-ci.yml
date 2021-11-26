@@ -11,7 +11,9 @@ image: python:latest
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
 variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PIP_CACHE_DIR: "/cache/$CI_PROJECT_NAME/.cache/pip"
+  XDG_CACHE_HOME: "/cache/$CI_PROJECT_NAME/.cache"
+
 
 # Pip's cache doesn't store the python packages
 # https://pip.pypa.io/en/stable/reference/pip_install/#caching
@@ -19,10 +21,6 @@ variables:
 # If you want to also cache the installed packages, you have to install
 # them in a virtualenv and cache it as well.
 
-cache:
-  paths:
-    - .cache/pip
-    - venv/
 
 build_wheel:
   stage: build
@@ -37,7 +35,8 @@ build_wheel:
       - dist/*.whl
     expire_in: 1 week
   tags:
-    - python-dinp-tscapx004r
+    - python3
+    - docker
   only:
     - tags
 
@@ -52,14 +51,15 @@ upload_wheel:
     - echo Upload wheel
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
   tags:
-    - python-dinp-tscapx004r
-
+    - python3
+    - docker
   only:
     - tags
 
 staging:
   stage: deploy
   variables:
+    PIP_CACHE_DIR: "/home/www/.cache/pip"
     GIT_STRATEGY: none
     VERSION_TAG: $CI_COMMIT_TAG
     MODEL_VERSION: "1.0"
@@ -89,7 +89,8 @@ staging:
     - rm -rf ${INSTALL_DIR}/current
     - ln -s $ipath ${INSTALL_DIR}/current
   tags:
-    - python-dinp-tscapx004r
+    - python3
+    - tscapx004r
   only:
     - tags
   when: manual
