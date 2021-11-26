@@ -12,7 +12,7 @@ from werkzeug.datastructures import FileStorage
 from urllib.request import urlopen
 from matchvec.utils import logger
 from celery import Celery
-from pymediainfo import MediaInfo
+#from pymediainfo import MediaInfo
 
 
 app = Flask(__name__)
