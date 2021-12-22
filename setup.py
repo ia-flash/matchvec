@@ -14,6 +14,4 @@ setup(name="matchvec",
     version=environ['CI_COMMIT_TAG'],
     packages=find_packages(),
     install_requires=REQUIREMENTS,
-    entry_points={'console_scripts': [
-          'matchvecapp = matchvecapp.app:main'
-      ]},)
+    )
