@@ -20,7 +20,10 @@ variables:
 #
 # If you want to also cache the installed packages, you have to install
 # them in a virtualenv and cache it as well.
-
+stages:
+  - build
+  - publish
+  - deploy
 
 build_wheel:
   stage: build
@@ -41,8 +44,8 @@ build_wheel:
     - tags
 
 
-upload_wheel:
-  stage: deploy
+publish_wheel:
+  stage: publish
   script:
     - python3 -m venv venv
     - source venv/bin/activate
@@ -60,7 +63,6 @@ staging:
   stage: deploy
   variables:
     PIP_CACHE_DIR: "/home/www/.cache/pip"
-    GIT_STRATEGY: none
     VERSION_TAG: $CI_COMMIT_TAG
     MODEL_VERSION: "1.0"
   script:
