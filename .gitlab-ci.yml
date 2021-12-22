@@ -79,8 +79,10 @@ staging:
     - pip3 install dist/${CI_PROJECT_NAME}*.whl
     - mkdir -p $ipath/models/${DETECTION_MODEL}
     - mkdir -p $ipath/models/${CLASSIFICATION_MODEL}
-    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/object_detection/${MODEL_VERSION}/yolov3.weights -o $ipath/models/${DETECTION_MODEL}/yolov3.weights'
-    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/object_detection/${MODEL_VERSION}/yolov3.cfg -o $ipath/models/${DETECTION_MODEL}/yolov3.cfg'
+    - yolo_weights="${YOLO_WEIGHTS:-yolov3.weights}"
+    - yolo_cfg="${YOLO_CFG:-yolov3.cfg}"
+    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/object_detection/${MODEL_VERSION}/${yolo_weights} -o $ipath/models/${DETECTION_MODEL}/${yolo_weights}'
+    - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/object_detection/${MODEL_VERSION}/${yolo_cfg} -o $ipath/models/${DETECTION_MODEL}/${yolo_cfg}'
     - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/object_detection/${MODEL_VERSION}/labels.json -o $ipath/models/${DETECTION_MODEL}/labels.json'
     - '[ $(curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classification/${MODEL_VERSION}/classification_model.onnx -o $ipath/models/${CLASSIFICATION_MODEL}/classifcation_model_onnx1.5.onnx --write-out "%{http_code}" --silent) -eq 200 ] || (echo "Erreur telechargement fichier classification_model.onnx" && exit 1)'
     - 'curl --insecure --header "JOB-TOKEN: ${CI_JOB_TOKEN}" ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/classification/${MODEL_VERSION}/idx_to_class.json -o $ipath/models/${CLASSIFICATION_MODEL}/idx_to_class.json'
