@@ -63,7 +63,6 @@ staging:
   stage: deploy
   variables:
     PIP_CACHE_DIR: "/home/www/.cache/pip"
-    VERSION_TAG: $CI_COMMIT_TAG
     MODEL_VERSION: "1.0"
   script:
     - if [ -z $DETECTION_MODEL ]; then echo "DETECTION_MODEL not set"; exit 1; fi
@@ -72,7 +71,7 @@ staging:
     - if [ -z $BACKEND ]; then echo "BACKEND not set"; exit 1; fi
     - if [ -z $INSTALL_DIR ]; then echo "INSTALL_DIR not set"; exit 1; fi
     #- if [ -z $APP_PORT ]; then echo "APP_PORT not set"; exit 1; fi
-    - ipath=${INSTALL_DIR}/${VERSION_TAG}
+    - ipath=${INSTALL_DIR}/${$CI_COMMIT_TAG}
     - echo Installation dans $ipath
     - rm -rf $ipath
     - python3 -m venv $ipath
