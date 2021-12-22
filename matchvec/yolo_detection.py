@@ -55,7 +55,9 @@ class Detector(BaseModel):
         SCALE: Yolo uses a normalisation factor different than 1 for each pixel
     """
     def __init__(self):
-        self.files = ['yolov3.weights', 'yolov3.cfg','labels.json']
+        yolo_weights = os.environ.get('YOLO_WEIGHTS', 'yolov3.weights')
+        yolo_cfg = os.environ.get('YOLO_CFG', 'yolov3.cfg')
+        self.files = [yolo_weights, yolo_cfg,'labels.json']
         dst_path = os.path.join(
             os.environ['BASE_MODEL_PATH'], DETECTION_MODEL)
         src_path = DETECTION_MODEL
@@ -65,8 +67,8 @@ class Detector(BaseModel):
             self.class_name = json.load(json_data)
 
         self.model = cv2.dnn.readNetFromDarknet(
-                os.path.join(os.environ['BASE_MODEL_PATH'], DETECTION_MODEL, 'yolov3.cfg'),
-                os.path.join(os.environ['BASE_MODEL_PATH'], DETECTION_MODEL, 'yolov3.weights')
+                os.path.join(os.environ['BASE_MODEL_PATH'], DETECTION_MODEL, yolo_cfg),
+                os.path.join(os.environ['BASE_MODEL_PATH'], DETECTION_MODEL, yolo_weights)
                 )
 
     def prediction(self, image: np.ndarray) -> List[np.ndarray]:
