@@ -7,7 +7,7 @@ flask-restplus==0.12.1
 sphinx-rtd-theme==0.4.3
 onnx==1.5.0
 onnxruntime-gpu==0.4.0
-Pillow==6.2.1
+Pillow==9.0.1
 pymediainfo==4.0
 boto3==1.9.199
 pytest==5.1.3
