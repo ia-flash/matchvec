@@ -19,6 +19,9 @@ Globals:
         ANONYM_MODEL: faster_rcnn_r50_fpn_anonym
         DETECTION_MODEL: ssd
         DETECTION_THRESHOLD: 0.4
+        DETECTION_IOU_THRESHOLD: 0.9
+        DETECTION_SIZE_THRESHOLD: 0.005
+
 Resources:
   MatchvecApi:
     Type: AWS::Serverless::Api

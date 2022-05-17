@@ -32,8 +32,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-DETECTION_IOU_THRESHOLD = 0.9
-DETECTION_SIZE_THRESHOLD = 0.002
+DETECTION_IOU_THRESHOLD = float(os.getenv('DETECTION_IOU_THRESHOLD', 0.9))
+DETECTION_SIZE_THRESHOLD = float(os.getenv('DETECTION_SIZE_THRESHOLD',0.002))
 
 
 def IoU(boxA: dict, boxB: dict) -> float:
