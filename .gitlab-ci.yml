@@ -112,3 +112,4 @@ update_env:
     - general
   only:
     - tags
+  needs: ["staging"]
