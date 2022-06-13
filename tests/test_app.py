@@ -12,7 +12,7 @@ def assert_clio(resp_data) :
     assert resp_data[0][0]["confidence"] > 0.8, "Car not detected"
 
 def assert_pompier(resp_data) :
-    assert resp_data[0][0]["prio_classif"]["prob"][0] > 0.7, 'Classif confidence too low %s'%resp_data
+    assert resp_data[0][0]["prio_classif"]["prob"][0] > 0.65, 'Classif confidence too low %s'%resp_data
     assert resp_data[0][0]["prio_classif"]["pred"][0] == "POMPIER",  'Not a fire fighter'
     assert resp_data[0][0]["confidence"] > 0.7, "Car not detected"
 

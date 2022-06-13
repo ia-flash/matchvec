@@ -32,8 +32,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-DETECTION_IOU_THRESHOLD = 0.9
-DETECTION_SIZE_THRESHOLD = 0.01
+DETECTION_IOU_THRESHOLD = float(os.getenv('DETECTION_IOU_THRESHOLD', 0.9))
+DETECTION_SIZE_THRESHOLD = float(os.getenv('DETECTION_SIZE_THRESHOLD',0.002))
 
 
 def IoU(boxA: dict, boxB: dict) -> float:
@@ -75,16 +75,16 @@ def filter_by_size(df: List[dict], image: np.ndarray) -> dict:
     """
     height, width = image.shape[:-1]
     surf = width * height
-    for i, row in enumerate(df.copy()):
+    df_filtered = []
+    for i, row in enumerate(df):
         mean_x = (row['x1'] + row['x2'])/ 2.
         mean_y = (row['y1'] + row['y2'])/ 2.
         dist = ((width/2 - mean_x) ** 2 + (height/2 - mean_y)**2)**(1./2)
         surf_box = (row['x2'] - row['x1']) * (row['y2'] - row['y1'])
-        surf_ratio = surf_box / surf
-        if surf_ratio < DETECTION_SIZE_THRESHOLD:
-            df.pop(i)
+        if surf_box >= DETECTION_SIZE_THRESHOLD * surf:
+            df_filtered.append(df[i])
 
-    return df
+    return df_filtered
 
 
 def filter_by_iou(df: dict) -> dict:
@@ -147,11 +147,11 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
 
     result = detector.prediction(img)
     df = detector.create_df(result, img)
+    print(df)
 
     # Filter by class
-    for i, row in enumerate(df.copy()):
-        if row['class_name'] not in ['car', 'truck']:
-            df.pop(i)
+    df = [row for row in df if row['class_name'] in ['car', 'truck']]
+    df = filter_by_size(df, img)
     df = filter_by_iou(df)
 
     #Image.fromarray(img).convert('RGB').save('/app/debug/classif_input.jpg')
