@@ -82,6 +82,7 @@ staging:
     - source $ipath/bin/activate
     - pip3 install -U pip
     - pip3 install dist/${CI_PROJECT_NAME}*.whl
+    - pip3 install gunicorn
     - mkdir -p $ipath/models/${DETECTION_MODEL}
     - mkdir -p $ipath/models/${CLASSIFICATION_MODEL}
     - yolo_weights="${YOLO_WEIGHTS:-yolov3.weights}"
