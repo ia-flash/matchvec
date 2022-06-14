@@ -101,7 +101,6 @@ staging:
     - tscapx004r
   only:
     - tags
-  when: manual
 
 
 update_env:
