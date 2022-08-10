@@ -4,16 +4,18 @@ import cv2
 import base64
 import numpy as np
 import werkzeug
+import logging
 werkzeug.cached_property = werkzeug.utils.cached_property
 from flask import Flask, send_from_directory, request, Blueprint, url_for
 from flask_restplus import Resource, Api, reqparse, fields
 from matchvec.process import predict_class, predict_objects, predict_anonym
 from werkzeug.datastructures import FileStorage
 from urllib.request import urlopen
-from matchvec.utils import logger
+
 from celery import Celery
 #from pymediainfo import MediaInfo
 
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'
@@ -307,10 +309,12 @@ class ClassPrediction(Resource):
         Image can be loaded either by using an internet URL in the url field or
         by using a local stored image in the image field
         """
+        logger.info("Détection et classification d'objets")
         images = request.files.getlist('image')
         url = request.form.get('url', None)
         res = list()
         if url:
+            logger.info("Traitement image %s", url)
             try:
                 resp = urlopen(url)
                 img = np.asarray(bytearray(resp.read()), dtype="uint8")
@@ -318,11 +322,13 @@ class ClassPrediction(Resource):
                 img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
                 res.append(predict_class(img))
             except Exception as e:
+                logger.exception(e)
                 print(url)
                 print(e)
                 res.append([])
 
         if images:
+            logger.info("Traitement de %d images", len(images))
             for i in range(len(images)):
                 try:
                     nparr = np.frombuffer(images[i].read(), np.uint8)
@@ -330,9 +336,11 @@ class ClassPrediction(Resource):
                     img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
                     res.append(predict_class(img))
                 except Exception as e:
+                    logger.exception(e)
                     print(e)
                     res.append([])
 
+        logger.info("Résultats : %d objets trouvés", sum(map(len, res)))
         return res
 
 
