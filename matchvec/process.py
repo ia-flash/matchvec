@@ -23,12 +23,7 @@ if 'ANONYM_MODEL' in os.environ:
     Detector_Anonym = import_module('matchvec.' + 'anonym_' + os.getenv('BACKEND')).Detector
     detector_anonym = Detector_Anonym()
 
-level = logging.DEBUG
-logging.basicConfig(
-        level=level,
-        format='%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-        )
+
 logger = logging.getLogger(__name__)
 
 
@@ -144,10 +139,10 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
         result: Predictions
     """
     #cv2.imwrite('/app/img.jpg',img)
-
+    logger.debug("Détection des objets")
     result = detector.prediction(img)
     df = detector.create_df(result, img)
-    print(df)
+    #print(df)
 
     # Filter by class
     df = [row for row in df if row['class_name'] in ['car', 'truck']]
@@ -167,7 +162,7 @@ def predict_class(img: np.ndarray) -> List[Union[str, float]]:
     cols = ['x1', 'y1', 'x2', 'y2', 'class_name','confidence']
 
     if len(selected_boxes) > 0:
-
+        logger.debug("Classification de %d objets", len(selected_boxes))
         pred, prob = classifier.prediction(selected_boxes)
         for i, obj in enumerate([dict((k, row[k]) for k in cols) for row in df]):
             obj.update({
